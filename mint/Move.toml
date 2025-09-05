@@ -14,7 +14,8 @@ beelievers_mint = "0x0"
 
 # TODO: change to production contract address
 ## TESTING
-auction_addr = "0xc454ce372be41bbcf0bc41a369f63cc997add129474c74c93709916e15015e77"
+# testnet
+auction_addr = "0x60f6241088efad8dea782dfbf0071aaf58cb1baa60388f4b5e66959f7eec7ef6"
 treasury_address = "0x71f544c7f7996c0f129146925e9c6a8d5e9332f7b59fd060d26c2199e7532b6b"
 
 [dev-dependencies]

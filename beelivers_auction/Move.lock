@@ -51,8 +51,8 @@ flavor = "sui"
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x1db5ee3c5869c943f3b254b71c0636fa42d5732c6dfbebef920468104643e217"
-latest-published-id = "0x1db5ee3c5869c943f3b254b71c0636fa42d5732c6dfbebef920468104643e217"
+original-published-id = "0x749993f86193ec6314993b4988f4f7d03df7c74a68b4a8f78cc32f605284da8d"
+latest-published-id = "0x749993f86193ec6314993b4988f4f7d03df7c74a68b4a8f78cc32f605284da8d"
 published-version = "1"
 
 [env.local]
@@ -62,7 +62,7 @@ latest-published-id = "0x725dda70f322e9ee7aede6e5ffdf91bc6f7d964e55b75b8f9454c3d
 published-version = "1"
 
 [env.localnet]
-chain-id = "75cbe003"
-original-published-id = "0xab93f1e4ec55490dfee74010cc86efc21c2fd9b34bcd961b723197df9a06177c"
-latest-published-id = "0xab93f1e4ec55490dfee74010cc86efc21c2fd9b34bcd961b723197df9a06177c"
+chain-id = "16f3d990"
+original-published-id = "0xaa9ff26bbfb526b8db1c0efb81d23a23f539c49c95fdae0fe34132890d24fa3b"
+latest-published-id = "0xaa9ff26bbfb526b8db1c0efb81d23a23f539c49c95fdae0fe34132890d24fa3b"
 published-version = "1"
