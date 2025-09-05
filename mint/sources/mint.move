@@ -15,11 +15,11 @@ use sui::table::{Self, Table};
 use sui::transfer_policy;
 use sui::vec_map::{Self, VecMap};
 
-const TOTAL_SUPPLY: u16 = 6021;
-const MYTHIC_SUPPLY: u16 = 21;
-const NORMAL_SUPPLY: u16 = 6000;
-const NATIVE_MYTHICS: u16 = 11;
-const NATIVE_NORMALS: u16 = 200;
+const TOTAL_SUPPLY: u16 = 200;
+const MYTHIC_SUPPLY: u16 = 10;
+const NORMAL_SUPPLY: u16 = 190;
+const NATIVE_MYTHICS: u16 = 2;
+const NATIVE_NORMALS: u16 = 3;
 
 const EInsufficientSupply: u64 = 1;
 const EMintingNotActive: u64 = 2;
@@ -180,7 +180,11 @@ fun create_nft(
     let NftMetadata { image_id, mut attrs } = if (collection.nft_metadata.contains(token_id)) {
         collection.nft_metadata.remove(token_id)
     } else {
-        empty_metadata()
+        // TODO testing
+        // empty_metadata()
+        let mut attrs = vec_map::empty<String, String>();
+        // attrs.insert(b"Family".to_string(), b"test_fam".to_string());
+        NftMetadata {image_id: b"bRNIa1JVmAldihkhkujef2DwufzGe5Ig7jLa55MEz5Y".to_ascii_string(), attrs}
     };
 
     let badge_ids = if (collection.preset_badges.contains(minter)) {
