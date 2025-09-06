@@ -13,9 +13,8 @@ beelivers_auction = { local = "../beelivers_auction/" }
 beelievers_mint = "0x0"
 
 # TODO: change to production contract address
-## TESTING
-auction_addr = "0xc454ce372be41bbcf0bc41a369f63cc997add129474c74c93709916e15015e77"
-treasury_address = "0x71f544c7f7996c0f129146925e9c6a8d5e9332f7b59fd060d26c2199e7532b6b"
+auction_addr = "0x161524be15687cca96dec58146568622458905c30479452351f231cac5d64c41"
+treasury_address = "0xa30212c91b8fea7b494d47709d97be5774eee1e20c3515a88ec5684283b4430b"
 
 [dev-dependencies]
 

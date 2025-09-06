@@ -42,11 +42,11 @@ const CONFIGS = {
 	},
 	local: {
 		AUCTION_CONTRACT: "0x5f549af160e14603de6102874ff5ec25d8f89c2d137d4a9bfb75977abdab385b",
-		PACKAGE_ID: "0x5a7bbff48b660002680b17c2179ef598f2dc993f565b0fb80abf141edef09088",
-		ADMIN_CAP: "0x7504992a749d45cfa101d213990d591d109f652ff31ab7129157dcfecccf2995",
-		TRANSFER_POLICY_CAP: "0xee0ef26717a0bd5ead40dafe8d8b126e7a72987cba95b1a8dd2078ff86697b73",
-		TRANSFER_POLICY_ID: "0x8a7bdceeb3142349b9eb338837a03adf0bc9875c81af9fb23a4b8b1db298b36a",
-		COLLECTION_ID: "0x7639ac2caf9d585389f4dd23f823056d0d82b895be7a81845c6ec8523a354e63",
+		PACKAGE_ID: "0xd0af67c0281e294200260fc18f2760aa9f8ae7e7a6addd472486154dcf12b50a",
+		ADMIN_CAP: "0xb30b32bc7a69871eb46647f16997adfed3407f0252052d745f62e62674a04b6a",
+		TRANSFER_POLICY_CAP: "0x36f9da986f880c01ee2530c475ce005828fc517792c88d5573d950d4fce0bd58",
+		TRANSFER_POLICY_ID: "0x64b8df7d67c5ae69f8c4dfe82401361341a936ed2a2c90be24b5e9f60ae39b8d",
+		COLLECTION_ID: "0x567076a52f4952b1f93fafc1f116c1c82c54c945bef2db84830a1ce79c5d867b",
 		KIOSK: "0xa20173e280e076af4c8a293c6a03569ea2a64bdad571daae9c9d341317171360",
 		KIOSK_CAP: "0xf353f31e1a78d02ea1322cb3e744c4faa52186673ee328bd6cd7ffdd70f0437a",
 		RPC_URL: "http://127.0.0.1:9000", // https://fullnode.testnet.sui.io:443
@@ -58,18 +58,21 @@ const CONFIGS = {
 		TEST_URLS_LIMIT: 30, // limit amount of urls processed and sent
 	},
 	production: {
-		PACKAGE_ID: "", // Replace with production package ID
-		ADMIN_CAP: "", // Replace with production admin cap
-		COLLECTION_ID: "", // Replace with production collection ID
-		TRANSFER_POLICY_ID: "", // Replace with production transfer policy ID
-		AUCTION_CONTRACT: "0x345c10a69dab4ba85be56067c94c4a626c51e297b884e43b113d3eb99ed7a0f3", // Replace with production auction contract
+		AUCTION_CONTRACT: "0x161524be15687cca96dec58146568622458905c30479452351f231cac5d64c41",
+		PACKAGE_ID: "0x3aeca4699ce5f914b56ee04b8ccd4b2eba1b93cabbab9f1a997735c52ef76253",
+		ADMIN_CAP: "0x9e0e0b8c9b68465caaf1e28cfff2c05f7a135503977995670884f57fc8b8ceb6",
+		TRANSFER_POLICY_CAP: "0xe83a713d437607737229a4ae32c056b7893417c14dc399c4696f74a238e4a9a7",
+		TRANSFER_POLICY_ID: "0xd9fe40ec079a6959940260c29be5a782cb79a7951906a0ac380a3961dbd78914",
+		COLLECTION_ID: "0xe896f82d681a0562a3062fff61a72c3ac324be5a4f00fa6db0f9520a4124ce7b",
+		KIOSK: "0x6384ef33995306a29c4e979aee39bec4b04d4094aaa1a6062d995f985dd9b343",
+		KIOSK_CAP: "0x5410c13fd6156a8baa44091ee6682129ffded0dacbcca7944c339aa444208a7f",
 		RPC_URL: "https://fullnode.mainnet.sui.io:443",
 		BATCH_SIZE: 200,
 		DELAY_BETWEEN_BATCHES: 4000,
 		TOTAL_NFTS: 6021, // Full collection
-		MINT_START_TIME: 1744088400000, //timestamp ms
-		TEST_ATTRIBUTES_LIMIT: 30, // limit amount of attrs processed and sent
-		TEST_URLS_LIMIT: 30, // limit amount of urls processed and sent
+		MINT_START_TIME: 1757192400000, //timestamp ms
+		TEST_ATTRIBUTES_LIMIT: 30,
+		TEST_URLS_LIMIT: 30,
 	},
 };
 
@@ -328,6 +331,10 @@ async function setMinterBadgesFromJson() {
 		const validEntries = addresses.filter((_, index) => badgeNumbers[index].length > 0);
 		const validBadgeNumbers = badgeNumbers.filter((badges) => badges.length > 0);
 
+		if (validEntries.length != validBadgeNumbers.length) {
+			throw new Error("Wrong badges");
+		}
+
 		if (validEntries.length === 0) {
 			log("No valid badge assignments found, skipping", "WARNING");
 			return;
@@ -335,31 +342,45 @@ async function setMinterBadgesFromJson() {
 
 		log(`Setting badges for ${validEntries.length} addresses...`, "INFO");
 
-		const txb = new TransactionBlock();
-		txb.setGasBudget(1000000000);
+		const BATCH_SIZE = 500;
+		let totalProcessed = 0;
 
-		txb.moveCall({
-			target: `${config.PACKAGE_ID}::${MODULE_NAME}::set_bulk_preset_badges`,
-			arguments: [
-				txb.object(config.ADMIN_CAP),
-				txb.object(config.COLLECTION_ID),
-				txb.pure(validEntries),
-				txb.pure(validBadgeNumbers),
-			],
-		});
+		for (let i = 0; i < validEntries.length; i += BATCH_SIZE) {
+			const batchEnd = Math.min(i + BATCH_SIZE, validEntries.length);
+			totalProcessed += batchEnd - i;
 
-		try {
-			const result = await client.signAndExecuteTransactionBlock({
-				signer,
-				transactionBlock: txb,
-				options: { showEffects: true },
+			log(`Setting badges batch ${i + 1}-${batchEnd}`, "INFO");
+
+			const txb = new TransactionBlock();
+			txb.setGasBudget(1000000000);
+
+			txb.moveCall({
+				target: `${config.PACKAGE_ID}::${MODULE_NAME}::set_bulk_preset_badges`,
+				arguments: [
+					txb.object(config.ADMIN_CAP),
+					txb.object(config.COLLECTION_ID),
+					txb.pure(validEntries.slice(i, batchEnd)),
+					txb.pure(validBadgeNumbers.slice(i, batchEnd)),
+				],
 			});
-			log(`Successfully set badges for ${validEntries.length} addresses`, "SUCCESS");
-			log(`Transaction digest: ${result.digest}`, "INFO");
-		} catch (error) {
-			log(`Error setting minter badges: ${error.message}`, "ERROR");
-			throw error;
+
+			try {
+				const result = await client.signAndExecuteTransactionBlock({
+					signer,
+					transactionBlock: txb,
+					options: { showEffects: true },
+				});
+				log(
+					`Set badges batch tx diges: ${result.digest} .... Progress: ${totalProcessed}/${validEntries.length}`,
+					"INFO",
+				);
+				await new Promise((resolve) => setTimeout(resolve, config.DELAY_BETWEEN_BATCHES));
+			} catch (error) {
+				log(`Error setting minter badges: ${error.message}`, "ERROR");
+				throw error;
+			}
 		}
+		log(`Successfully added all ${totalProcessed} badges`, "SUCCESS");
 	} catch (error) {
 		log(`Error reading or processing badges.json: ${error.message}`, "ERROR");
 		throw error;
@@ -873,6 +894,8 @@ async function runCompleteSetup() {
 	if (SKIP_MINTING) log("⚠️ Minting will be skipped", "WARNING");
 
 	try {
+		/*
+		 */
 		log("\n[1] Adding mythic eligible...", "INFO");
 		if (IS_TEST) {
 			await addTestMythicEligible();
