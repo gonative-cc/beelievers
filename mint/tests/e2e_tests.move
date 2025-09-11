@@ -131,7 +131,7 @@ fun full_e2e_tests() {
 
 	steps.do!(|i| {
 	    let can_mythic = c.is_mythic_eligible(request[id + i]);
-	    c.mint_random(&tp, can_mythic, &r, &mut kiosk, &kiosk_cap, scenario.ctx());
+	    c.mint_random(&tp, can_mythic, &mut kiosk, &kiosk_cap, &r, scenario.ctx());
 	    c.remove_mythic_eligible(request[id + i]);
 	});
 

@@ -475,12 +475,11 @@ fun mint_for_sender(
 public entry fun mint(
     collection: &mut BeelieversCollection,
     transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
-    // REVIEW: standard objects should be at the end (so Auction should be before random etc...)
-    random: &Random,
-    clock: &Clock,
     auction: &Auction,
     kiosk: &mut kiosk::Kiosk,
     kiosk_owner_cap: &kiosk::KioskOwnerCap,
+    clock: &Clock,
+    random: &Random,
     ctx: &mut TxContext
 ) {
     let sender = tx_context::sender(ctx);
@@ -495,7 +494,7 @@ public entry fun mint(
     let (is_eligible, can_mythic) = collection.determine_mint_eligibility(sender, auction);
     assert!(is_eligible, EUnauthorized);
 
-    mint_random(collection, transfer_policy, can_mythic, random, kiosk, kiosk_owner_cap, ctx);
+    collection.mint_random(transfer_policy, can_mythic, kiosk, kiosk_owner_cap, random, ctx);
 
     collection.minted_addresses.add(sender, true);
     if (can_mythic) {
@@ -508,10 +507,9 @@ public(package) fun mint_random(
     collection: &mut BeelieversCollection,
     transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
     can_mythic: bool,
-    // REVIEW: standard objects should be at the end (so Auction should be before random etc...)
-    random: &Random,
     kiosk: &mut kiosk::Kiosk,
     kiosk_owner_cap: &kiosk::KioskOwnerCap,
+    random: &Random,
     ctx: &mut TxContext
 ) {
     let remaining_nfts = collection.remaining_nfts.length() as u16;

@@ -26,7 +26,7 @@ fun call_mint(mut scenario: Scenario, minter: address) : (Scenario, vector<NFTMi
         let clock = sui::clock::create_for_testing(scenario.ctx());
         let auction: Auction = scenario.take_shared();
 
-	c.mint(&tp, &r, &clock, &auction, &mut kiosk, &kiosk_cap, scenario.ctx());
+	c.mint(&tp, &auction, &mut kiosk, &kiosk_cap, &clock, &r, scenario.ctx());
 
 	return_shared(c);
         return_shared(r);
