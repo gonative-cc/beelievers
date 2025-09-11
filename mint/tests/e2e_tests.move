@@ -153,16 +153,11 @@ fun full_e2e_tests() {
     let mc = result.count!(|token_event| {token_event.token_id() <= 21});
     assert_eq!(mc, 10);
 
-    let mut ids = sui::table::new<u64, bool>(scenario.ctx());
+    let mut ids = sui::table::new<u16, bool>(scenario.ctx());
     result.do!(|t| {
 	ids.add(t.token_id(), true)
     });
 
-    5810u64.do!(|i| {
-	if (result[i].token_id() <= 21) {
-	    std::debug::print(&i);
-	};
-    });
     minted_events.do!(|t| {
 	ids.add(t.token_id(), true)
     });
@@ -170,7 +165,7 @@ fun full_e2e_tests() {
 
     // verify all token id mint
     6021u64.do!(|i| {
-	assert_eq!(ids.contains(i + 1), true);
+	assert_eq!(ids.contains((i + 1) as u16), true);
     });
     sui::test_utils::destroy(ids);
     scenario.end();

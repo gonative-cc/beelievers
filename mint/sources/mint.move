@@ -4,6 +4,7 @@ module beelievers_mint::mint;
 
 use beelivers_auction::auction::{Self, Auction};
 use std::string::{Self, String};
+use std::ascii;
 use sui::clock::{Self, Clock};
 use sui::display;
 use sui::event;
@@ -14,11 +15,11 @@ use sui::table::{Self, Table};
 use sui::transfer_policy;
 use sui::vec_map::{Self, VecMap};
 
-const TOTAL_SUPPLY: u64 = 6021;
-const MYTHIC_SUPPLY: u64 = 21;
-const NORMAL_SUPPLY: u64 = 6000;
-const NATIVE_MYTHICS: u64 = 11;
-const NATIVE_NORMALS: u64 = 200;
+const TOTAL_SUPPLY: u16 = 6021;
+const MYTHIC_SUPPLY: u16 = 21;
+const NORMAL_SUPPLY: u16 = 6000;
+const NATIVE_MYTHICS: u16 = 11;
+const NATIVE_NORMALS: u16 = 200;
 
 const EInsufficientSupply: u64 = 1;
 const EMintingNotActive: u64 = 2;
@@ -34,7 +35,7 @@ const EPostMintNotActive: u64 = 11;
 
 public struct NFTMinted has copy, drop {
     nft_id: object::ID,
-    token_id: u64,
+    token_id: u16,
     minter: address,
 }
 
@@ -49,35 +50,35 @@ public struct AdminCap has key, store {
 }
 
 public struct NftMetadata has store {
-    image_id: vector<u8>,
+    image_id: ascii::String,
     attrs: VecMap<String, String>,
 }
 
 public(package) fun empty_metadata(): NftMetadata {
-    NftMetadata { attrs: vec_map::empty<String, String>(), image_id: b"" }
+    NftMetadata { attrs: vec_map::empty<String, String>(), image_id: b"".to_ascii_string() }
 }
 
 public struct AttrBadge has store {
     name: String,
-    id: u32, // badge ID
+    id: u16, // badge ID
 }
 
 public struct BeelieversCollection has key {
     id: UID,
     /// Unix time in ms, when admin can claim not minted tokens back to the treasury.
     postmint_start: u64,
-    remaining_mythic: u64,
+    remaining_mythic: u16,
     // vector values make a list nfts that are remaining to mint.
     // each time we mint an NFT, we probe it from a specific index:
     //   token_id = remaining_nfts[probe],
     // and then swap that element in the vector with the last element and remove the last
     // element to effectively remove that nft id from available nfts.
-    remaining_nfts: vector<u64>,
+    remaining_nfts: vector<u16>,
     /// List of addresses eligible to mint a mythic NFT. Prunned on mint.
     mythic_eligible_list: Table<address, bool>,
     minted_addresses: Table<address, bool>,
     // amount of remaining addresses eligible to mint a mythic nft
-    remaining_mythic_eligible: u64,
+    remaining_mythic_eligible: u16,
     premint_completed: bool,
     minting_active: bool,
     mint_start_time: u64,
@@ -85,15 +86,15 @@ public struct BeelieversCollection has key {
     // REVIEW: this is not used
     treasury_address: address,
     /// mapping by token_id. Prunned on mint.
-    nft_metadata: Table<u64, NftMetadata>,
+    nft_metadata: Table<u16, NftMetadata>,
     /// badges setup during the initial mint, by the minter address. Prunned on mint.
-    preset_badges: Table<address, vector<u32>>,
+    preset_badges: Table<address, vector<u16>>,
     /// map of the token_id -> final set of badges. This is when we want to update
     /// NFT in the future and attach new badges
-    future_badges: Table<u64, vector<u32>>,
+    future_badges: Table<u16, vector<u16>>,
     // REVIEW: since this is a small list (only 21 entries), it should be vector.
     /// mapping from badge_id (number) to badge name
-    badge_names: Table<u32, String>,
+    badge_names: Table<u16, String>,
     /// Badge IDs that will go be added as attributes during the mint
     /// This is a list of pairs: attribute name, badge ID
     attribute_badges: vector<AttrBadge>,
@@ -102,9 +103,9 @@ public struct BeelieversCollection has key {
 public struct BeelieverNFT has key, store {
     id: UID,
     name: String,
-    image_id: vector<u8>,
+    image_id: ascii::String,
     attributes: VecMap<String, String>,
-    token_id: u64,
+    token_id: u16,
     badges: vector<String>,
 }
 
@@ -117,7 +118,7 @@ fun init(witness: MINT, ctx: &mut TxContext) {
         postmint_start: 1760054400000, // October 10, 2025 00:00:00 UTC.
         remaining_mythic: MYTHIC_SUPPLY,
         // NOTE: token IDs start from 1.
-        remaining_nfts: vector::tabulate!(TOTAL_SUPPLY, |i| i+1),
+        remaining_nfts: vector::tabulate!(TOTAL_SUPPLY as u64, |i| (i+1) as u16),
         premint_completed: false,
         minting_active: false,
         mint_start_time: 0,
@@ -126,10 +127,10 @@ fun init(witness: MINT, ctx: &mut TxContext) {
         remaining_mythic_eligible: 0,
         auction_contract: @auction_addr,
         treasury_address: @treasury_address,
-        nft_metadata: table::new<u64, NftMetadata>(ctx),
-        preset_badges: table::new<address, vector<u32>>(ctx),
-        future_badges: table::new<u64, vector<u32>>(ctx),
-        badge_names: table::new<u32, String>(ctx),
+        nft_metadata: table::new<u16, NftMetadata>(ctx),
+        preset_badges: table::new<address, vector<u16>>(ctx),
+        future_badges: table::new<u16, vector<u16>>(ctx),
+        badge_names: table::new<u16, String>(ctx),
         // NOTE: this is a hardcoded top_21 badge that we will add as an attribute
         attribute_badges: vector[AttrBadge { name: b"badge_rank".to_string(), id: 4 }],
     };
@@ -147,7 +148,7 @@ fun init(witness: MINT, ctx: &mut TxContext) {
     );
     display::add(
         &mut nft_display,
-        string::utf8(b"image_id"),
+        string::utf8(b"image_url"),
         string::utf8(b"https://walrus.tusky.io/{image_id}"),
     );
     display::add(&mut nft_display, string::utf8(b"attributes"), string::utf8(b"{attributes}"));
@@ -169,7 +170,7 @@ fun init(witness: MINT, ctx: &mut TxContext) {
 
 fun create_nft(
     collection: &mut BeelieversCollection,
-    token_id: u64,
+    token_id: u16,
     minter: address,
     ctx: &mut TxContext,
 ): BeelieverNFT {
@@ -185,7 +186,7 @@ fun create_nft(
     let badge_ids = if (collection.preset_badges.contains(minter)) {
         collection.preset_badges.remove(minter)
     } else {
-        vector::empty<u32>()
+        vector::empty<u16>()
     };
 
     let mut badges = vector::empty<String>();
@@ -212,8 +213,7 @@ fun create_nft(
     }
 }
 
-
-fun badge_number_to_name(collection: &BeelieversCollection, badge_id: u32): String {
+fun badge_number_to_name(collection: &BeelieversCollection, badge_id: u16): String {
     if (collection.badge_names.contains(badge_id)) {
         *table::borrow(&collection.badge_names, badge_id)
     } else {
@@ -268,7 +268,7 @@ public fun set_bulk_preset_badges(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
     addresses: vector<address>,
-    badges: vector<vector<u32>>,
+    badges: vector<vector<u16>>,
 ) {
     assert!(vector::length(&addresses) == vector::length(&badges), EInvalidQuantity);
 
@@ -292,7 +292,7 @@ public fun set_bulk_preset_badges(
 public fun set_bulk_badge_names(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    badge_ids: vector<u32>,
+    badge_ids: vector<u16>,
     badge_names: vector<String>,
 ) {
     assert!(vector::length(&badge_ids) == vector::length(&badge_names), EInvalidQuantity);
@@ -316,8 +316,8 @@ public fun set_bulk_badge_names(
 public fun set_future_badges(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    nft_id: u64,
-    badges: vector<u32>,
+    nft_id: u16,
+    badges: vector<u16>,
 ) {
     assert!(nft_id > 0 && nft_id <= TOTAL_SUPPLY, EInvalidTokenId);
 
@@ -340,16 +340,16 @@ public fun upsert_nft_badges(c: &BeelieversCollection, nft: &mut BeelieverNFT) {
 public fun set_nft_image(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    nft_id: u64,
+    nft_id: u16,
     image_id: vector<u8>,
 ) {
     assert!(nft_id > 0 && nft_id <= TOTAL_SUPPLY, EInvalidTokenId);
 
     if (collection.nft_metadata.contains(nft_id)) {
         let m = table::borrow_mut(&mut collection.nft_metadata, nft_id);
-        m.image_id = image_id;
+        m.image_id = image_id.to_ascii_string();
     } else {
-        let m = NftMetadata { attrs: vec_map::empty<String, String>(), image_id };
+        let m = NftMetadata { attrs: vec_map::empty<String, String>(), image_id: image_id.to_ascii_string() };
         table::add(&mut collection.nft_metadata, nft_id, m);
     };
 }
@@ -357,7 +357,7 @@ public fun set_nft_image(
 public fun set_bulk_nft_images(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    nft_ids: vector<u64>,
+    nft_ids: vector<u16>,
     image_ids: vector<vector<u8>>,
 ) {
     assert!(vector::length(&nft_ids) == vector::length(&image_ids), EInvalidQuantity);
@@ -378,7 +378,7 @@ public fun set_bulk_nft_images(
 public fun set_bulk_nft_attributes(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    nft_ids: vector<u64>,
+    nft_ids: vector<u16>,
     keys: vector<vector<String>>,
     values: vector<vector<String>>,
 ) {
@@ -407,7 +407,7 @@ public fun set_bulk_nft_attributes(
 public fun set_nft_attributes(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    nft_id: u64,
+    nft_id: u16,
     keys: vector<String>,
     values: vector<String>,
 ) {
@@ -451,7 +451,7 @@ fun mint_for_sender(
 
     let is_mythic = token_id <= MYTHIC_SUPPLY;
     if (is_mythic) {
-        let last_mythic_idx = collection.remaining_mythic-1;
+        let last_mythic_idx = (collection.remaining_mythic-1) as u64;
         if (probe_idx != last_mythic_idx)
         collection.remaining_nfts.swap(probe_idx, last_mythic_idx);
         collection.remaining_nfts.swap_remove(last_mythic_idx);
@@ -471,7 +471,7 @@ fun mint_for_sender(
     kiosk::lock(kiosk, kiosk_owner_cap, transfer_policy, nft);
 }
 
-
+#[allow(lint(public_entry))]
 public entry fun mint(
     collection: &mut BeelieversCollection,
     transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
@@ -514,7 +514,7 @@ public(package) fun mint_random(
     kiosk_owner_cap: &kiosk::KioskOwnerCap,
     ctx: &mut TxContext
 ) {
-    let remaining_nfts = collection.remaining_nfts.length();
+    let remaining_nfts = collection.remaining_nfts.length() as u16;
     let remaining_mythic = collection.remaining_mythic;
     let start = if (can_mythic) 0 else remaining_mythic;
     // we need to make sure that mythics will be all minted to eligible users
@@ -523,11 +523,11 @@ public(package) fun mint_random(
     let end = if (can_mythic
         && remaining_mythic >= collection.remaining_mythic_eligible && remaining_mythic >= 1)
         remaining_mythic-1 else remaining_nfts-1;
-    let probe = random.new_generator(ctx).generate_u64_in_range(start, end);
-    collection.mint_for_sender(probe, transfer_policy, kiosk, kiosk_owner_cap, ctx);
+    let probe = random.new_generator(ctx).generate_u16_in_range(start, end);
+    collection.mint_for_sender(probe as u64, transfer_policy, kiosk, kiosk_owner_cap, ctx);
 }
 
-/// Mints (end_id - start_id + 1) NFTs to the
+///Premint NFT
 public fun premint_to_native(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
@@ -545,19 +545,19 @@ public fun premint_to_native(
     while (i <= NATIVE_MYTHICS) {
         // NOTE: indexes for available tokens start from 0
         //
-        let probe = g.generate_u64_in_range(0, collection.remaining_mythic-1);
-        collection.mint_for_sender(probe, tp, kiosk, kiosk_cap, ctx);
+        let probe = g.generate_u16_in_range(0, collection.remaining_mythic-1);
+        collection.mint_for_sender(probe as u64, tp, kiosk, kiosk_cap, ctx);
         i = i+1;
     };
 
     // mint NATIVE_NORMALS to the treasury
     i = 1;
     let start_normal = collection.remaining_mythic;
-    let remaining_nfts = collection.remaining_nfts.length();
+    let remaining_nfts = collection.remaining_nfts.length() as u16;
     while (i <= NATIVE_NORMALS) {
         // NOTE: i must start from 1 to make `remaining_nfts-i` correct
-        let probe = g.generate_u64_in_range(start_normal, remaining_nfts-i);
-        collection.mint_for_sender(probe, tp, kiosk, kiosk_cap, ctx);
+        let probe = g.generate_u16_in_range(start_normal, remaining_nfts-i);
+        collection.mint_for_sender(probe as u64, tp, kiosk, kiosk_cap, ctx);
         i = i+1;
     };
 
@@ -570,7 +570,7 @@ public fun premint_to_native(
 public fun postmint_to_native(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
-    num: u64,
+    num: u16,
     tp: &transfer_policy::TransferPolicy<BeelieverNFT>,
     kiosk: &mut kiosk::Kiosk,
     kiosk_cap: &kiosk::KioskOwnerCap,
@@ -578,13 +578,13 @@ public fun postmint_to_native(
     ctx: &mut TxContext,
 ) {
     let current_time = clock::timestamp_ms(clock);
-    let remaining_nfts = collection.remaining_nfts.length();
+    let remaining_nfts = collection.remaining_nfts.length() as u16;
     assert!(collection.postmint_start <= current_time, EPostMintNotActive);
     assert!(num > 0 && num < remaining_nfts, EInsufficientSupply);
 
     let mut i = 1;
     while (i <= num) {
-        collection.mint_for_sender(remaining_nfts - i, tp, kiosk, kiosk_cap, ctx);
+        collection.mint_for_sender((remaining_nfts - i) as u64, tp, kiosk, kiosk_cap, ctx);
         i = i+1;
     };
 }
@@ -599,14 +599,14 @@ fun determine_mint_eligibility(
 };  (auction::is_winner(auction, sender), false) }
 
 /// returns: (total_minted, mythic_minted, normal_minted)
-public fun get_collection_stats(c: &BeelieversCollection): (u64, u64, u64) {
+public fun get_collection_stats(c: &BeelieversCollection): (u16, u16, u16) {
     // remaining_nfts[0] is not used!
-    let total_minted = TOTAL_SUPPLY - c.remaining_nfts.length();
+    let total_minted = TOTAL_SUPPLY - (c.remaining_nfts.length() as u16);
     let mythic_minted = MYTHIC_SUPPLY - c.remaining_mythic;
     (total_minted, mythic_minted, total_minted - mythic_minted)
 }
 
-public fun get_supply(): vector<u64> { vector[TOTAL_SUPPLY, MYTHIC_SUPPLY, NORMAL_SUPPLY] }
+public fun get_supply(): vector<u16> { vector[TOTAL_SUPPLY, MYTHIC_SUPPLY, NORMAL_SUPPLY] }
 
 public fun is_mythic_eligible(collection: &BeelieversCollection, addr: address): bool {
     table::contains(&collection.mythic_eligible_list, addr)
@@ -616,7 +616,7 @@ public fun has_minted(collection: &BeelieversCollection, addr: address): bool {
     table::contains(&collection.minted_addresses, addr)
 }
 
-public fun get_badge_name(collection: &BeelieversCollection, badge_id: u32): String {
+public fun get_badge_name(collection: &BeelieversCollection, badge_id: u16): String {
     if (collection.badge_names.contains(badge_id)) {
         *table::borrow(&collection.badge_names, badge_id)
     } else {
@@ -636,34 +636,6 @@ public fun get_mint_start_time(collection: &BeelieversCollection): u64 {
 // Helper functions
 //
 
-/// creates a boolean vector of size `size` with all elements set to false.
-public fun create_boolean_vector(size: u64, val: bool): vector<bool> {
-    vector::tabulate!(size, |_| val)
-}
-
-//
-// TESTS
-//
-
-#[test]
-fun test_create_boolean_vector() {
-    let vec = create_boolean_vector(21, false);
-    assert!(vector::length(&vec) == 21, 0);
-    let mut i = 0;
-    while (i < 21) {
-        assert!(vec[i] == false);
-        i = i + 1;
-    };
-
-    let vec = create_boolean_vector(5, true);
-    assert!(vector::length(&vec) == 5, 0);
-    i = 0;
-    while (i < 5) {
-        assert!(vec[i]);
-        i = i + 1;
-    };
-}
-
 #[test_only]
 public(package) fun witness_for_test(): MINT {
     return MINT {}
@@ -679,7 +651,7 @@ public(package) fun nft_id(e: &NFTMinted): ID {
 }
 
 #[test_only]
-public(package) fun token_id(e: &NFTMinted): u64 {
+public(package) fun token_id(e: &NFTMinted): u16 {
     e.token_id
 }
 
@@ -698,11 +670,22 @@ public(package) fun remove_mythic_eligible(c: &mut BeelieversCollection, addr: a
 }
 
 #[test_only]
-public(package) fun set_remaining_nfts(c: &mut BeelieversCollection, nfts: vector<u64>) {
+public(package) fun set_remaining_nfts(c: &mut BeelieversCollection, nfts: vector<u16>) {
     c.remaining_nfts = nfts;
 }
 
 #[test_only]
-public(package) fun set_remaining_mythic(c: &mut BeelieversCollection, remaining_mythic: u64) {
+public(package) fun set_remaining_mythic(c: &mut BeelieversCollection, remaining_mythic: u16) {
     c.remaining_mythic = remaining_mythic;
+}
+
+#[test]
+public fun test_vecmap() {
+    let mut attrs = vec_map::empty<String, String>();
+    let key = b"Family".to_string();
+    let val = b"test_fam".to_string();
+    attrs.insert(key, val);
+
+    assert!(attrs.contains(&key));
+    assert!(attrs[&key] == val);
 }

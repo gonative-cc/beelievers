@@ -18,65 +18,71 @@ const MODULE_NAME = "mint";
 // 1. Download https://github.com/MystenLabs/apps
 // 2. cd kiosk
 // 3. sui move publish and copy the published pkg
-const LOCAL_KIOSK_PKG = "0x46d005c7347ec1c8743db00e756ae1ac1c16540f97a85fb59f1fb04757ea4137";
+const LOCAL_KIOSK_PKG = "0xc25518ca0079c243b7973f5ebe3e8a390c71ab2f2a2cad1dcd11a6066a98ca15";
 const RANDOM_PKG = "0x8";
 
 // Environment-specific configurations
 const CONFIGS = {
-	test: {
-		PACKAGE_ID: "",
-		ADMIN_CAP: "",
-		TRANSFER_POLICY_CAP: "",
-		TRANSFER_POLICY_ID: "",
-		COLLECTION_ID: "",
-		AUCTION_CONTRACT: "",
-		KIOSK: "",
-		KIOSK_CAP: "",
+	testnet: {
+		AUCTION_CONTRACT: "0x60f6241088efad8dea782dfbf0071aaf58cb1baa60388f4b5e66959f7eec7ef6",
+		PACKAGE_ID: "0xae0aab765399e42c536b26ee8044efbcdfd4346926a88b26847bf5541cde45ed",
+		ADMIN_CAP: "0xb71162810cf2683a763bd7b2400e918e8c5d95a7890450bb8d888e84c0cfd253",
+		TRANSFER_POLICY_CAP: "0x3d35d99f054e3c7ee6fe18c4c8f1fb1900da6d219b8a84b03051cf932d3b56fd",
+		TRANSFER_POLICY_ID: "0x23039cf016e97829afb865ba1db63e342914c11eca76f87cd4b3d3b4e8e63741",
+		COLLECTION_ID: "0x565d980198d3bd1ec33107110ccc5ad448dacb19f1495da313cb015971bcd146",
+		KIOSK: "0x5f3f8963055c7fac44340e82e88e4b79d7abfa36382b006a8e0b9b803cdfb088",
+		KIOSK_CAP: "0x81a267691ff67fd44faf14ba4ab773c22ec306907c8b59af8690b8213e8a6efd",
 		RPC_URL: "https://fullnode.testnet.sui.io:443",
 		BATCH_SIZE: 200, // batch size for setting metadata (attributes + image urls)
 		DELAY_BETWEEN_BATCHES: 2000,
 		TOTAL_NFTS: 6021, // Full collection (same as production)
 		MINT_START_TIME: 1744088400000, //timestamp ms
-		TESTNET_ATTRIBUTES_LIMIT: 21, // Only process first 21 NFTs for attributes on testnet
-		TESTNET_URLS_LIMIT: 21, // Only process first 21 NFTs for URLs on testnet
+		TEST_ATTRIBUTES_LIMIT: 10, // Only process first 21 NFTs for attributes on testnet
+		TEST_URLS_LIMIT: 10, // Only process first 21 NFTs for URLs on testnet
 	},
 	local: {
-		PACKAGE_ID: "0x820a9b7dfa3aebe5df024b8c77f5d50e2a30869475b855a55698d085328bf94e",
-		ADMIN_CAP: "0x14e4242dea61baf7abfa5baa7dc5fda528c3b755dcd67be70e81b1642e1551b2",
-		TRANSFER_POLICY_CAP: "0x3e7067ac9bdad02b6e40c77f90b21333b5ea2d94766489c3ca17152aa15e2c68",
-		TRANSFER_POLICY_ID: "0x790ea308131449655d9d94396b3ad6b84be59587ac70b9f1823d8756776a8277",
-		COLLECTION_ID: "0xec229d86c39927a1e8abfb3ac8e8e6022538ade0a8f06a8469c6c57c2a750f08",
-		AUCTION_CONTRACT: "0x26875f73ccbd245af2118e05b5855eb0d143f674f4f9b095c09fca4710a7944f",
-		KIOSK: "0x8fce0f006791e7ae737afa50f5d2816853099aaa02bbc86fb74bcc8a1958a55c",
-		KIOSK_CAP: "0xe6a38c267cd76b0aae52993a1a67584b56ab55dc88ec484e830a59ea538e6d60",
+		AUCTION_CONTRACT: "0x5f549af160e14603de6102874ff5ec25d8f89c2d137d4a9bfb75977abdab385b",
+		PACKAGE_ID: "0xd0af67c0281e294200260fc18f2760aa9f8ae7e7a6addd472486154dcf12b50a",
+		ADMIN_CAP: "0xb30b32bc7a69871eb46647f16997adfed3407f0252052d745f62e62674a04b6a",
+		TRANSFER_POLICY_CAP: "0x36f9da986f880c01ee2530c475ce005828fc517792c88d5573d950d4fce0bd58",
+		TRANSFER_POLICY_ID: "0x64b8df7d67c5ae69f8c4dfe82401361341a936ed2a2c90be24b5e9f60ae39b8d",
+		COLLECTION_ID: "0x567076a52f4952b1f93fafc1f116c1c82c54c945bef2db84830a1ce79c5d867b",
+		KIOSK: "0xa20173e280e076af4c8a293c6a03569ea2a64bdad571daae9c9d341317171360",
+		KIOSK_CAP: "0xf353f31e1a78d02ea1322cb3e744c4faa52186673ee328bd6cd7ffdd70f0437a",
 		RPC_URL: "http://127.0.0.1:9000", // https://fullnode.testnet.sui.io:443
 		BATCH_SIZE: 200,
 		DELAY_BETWEEN_BATCHES: 2000,
 		TOTAL_NFTS: 6021, // Full collection (same as production)
 		MINT_START_TIME: 1744088400000, //timestamp ms
-		TESTNET_ATTRIBUTES_LIMIT: 21, // Only process first 21 NFTs for attributes on testnet
-		TESTNET_URLS_LIMIT: 21, // Only process first 21 NFTs for URLs on testnet
+		TEST_ATTRIBUTES_LIMIT: 30, // limit amount of attrs processed and sent
+		TEST_URLS_LIMIT: 30, // limit amount of urls processed and sent
 	},
 	production: {
-		PACKAGE_ID: "", // Replace with production package ID
-		ADMIN_CAP: "", // Replace with production admin cap
-		COLLECTION_ID: "", // Replace with production collection ID
-		TRANSFER_POLICY_ID: "", // Replace with production transfer policy ID
-		AUCTION_CONTRACT: "0x345c10a69dab4ba85be56067c94c4a626c51e297b884e43b113d3eb99ed7a0f3", // Replace with production auction contract
+		AUCTION_CONTRACT: "0x161524be15687cca96dec58146568622458905c30479452351f231cac5d64c41",
+		PACKAGE_ID: "0x3aeca4699ce5f914b56ee04b8ccd4b2eba1b93cabbab9f1a997735c52ef76253",
+		ADMIN_CAP: "0x9e0e0b8c9b68465caaf1e28cfff2c05f7a135503977995670884f57fc8b8ceb6",
+		TRANSFER_POLICY_CAP: "0xe83a713d437607737229a4ae32c056b7893417c14dc399c4696f74a238e4a9a7",
+		TRANSFER_POLICY_ID: "0xd9fe40ec079a6959940260c29be5a782cb79a7951906a0ac380a3961dbd78914",
+		COLLECTION_ID: "0xe896f82d681a0562a3062fff61a72c3ac324be5a4f00fa6db0f9520a4124ce7b",
+		KIOSK: "0x6384ef33995306a29c4e979aee39bec4b04d4094aaa1a6062d995f985dd9b343",
+		KIOSK_CAP: "0x5410c13fd6156a8baa44091ee6682129ffded0dacbcca7944c339aa444208a7f",
 		RPC_URL: "https://fullnode.mainnet.sui.io:443",
 		BATCH_SIZE: 200,
-		DELAY_BETWEEN_BATCHES: 5000,
+		DELAY_BETWEEN_BATCHES: 4000,
 		TOTAL_NFTS: 6021, // Full collection
-		MINT_START_TIME: 1744088400000, //timestamp ms
+		MINT_START_TIME: 1757192400000, //timestamp ms
+		TEST_ATTRIBUTES_LIMIT: 30,
+		TEST_URLS_LIMIT: 30,
 	},
 };
 
 // Configuration
 const SKIP_PREMINT = process.argv.includes("--skip-premint");
 const SKIP_MINTING = process.argv.includes("--skip-minting");
+const IS_TEST = process.argv.includes("--test");
 
 function getConfig() {
-	let environment = process.argv[3] || process.argv[2];
+	let environment = process.argv[2];
 
 	let cfg = CONFIGS[environment];
 	if (cfg === undefined) {
@@ -91,7 +97,7 @@ function log(message, type = "INFO") {
 	const timestamp = new Date().toISOString();
 	const emoji =
 		type === "SUCCESS" ? "✅" : type === "ERROR" ? "❌" : type === "WARNING" ? "⚠️" : "ℹ️";
-	const environment = process.argv[2] || "test";
+	const environment = process.argv[2];
 	const env = environment.toUpperCase();
 	console.log(`[${timestamp}] [${env}] ${emoji} ${message}`);
 }
@@ -213,7 +219,7 @@ async function addProductionMythicEligible() {
 
 				totalProcessed += batchMythicEligible.length;
 				log(
-					`Successfully added ${batchMythicEligible.length} mythic eligible addresses in current batch`,
+					`Added ${batchMythicEligible.length} mythic eligible addresses in current batch`,
 					"SUCCESS",
 				);
 				log(
@@ -224,8 +230,9 @@ async function addProductionMythicEligible() {
 
 				// Add delay between batches to avoid rate limiting
 				if (batchEnd < mythicEligible.length) {
-					log("Waiting 3 seconds before next batch...", "INFO");
-					await new Promise((resolve) => setTimeout(resolve, 3000));
+					await new Promise((resolve) =>
+						setTimeout(resolve, config.DELAY_BETWEEN_BATCHES),
+					);
 				}
 			} catch (error) {
 				log(
@@ -293,8 +300,6 @@ async function setBadgeNamesFromJson() {
 			log(`Error setting badge names: ${error.message}`, "ERROR");
 			throw error;
 		}
-
-		log(`Completed setting badge names`, "SUCCESS");
 	} catch (error) {
 		log(`Error reading or processing badge_names.json: ${error.message}`, "ERROR");
 		throw error;
@@ -306,8 +311,10 @@ async function setMinterBadgesFromJson() {
 	const { client, signer } = getClientAndSigner();
 
 	try {
-		log("Reading minter badges from badges.json...", "INFO");
-		const badgeData = JSON.parse(await fs.readFile("badges.json", "utf8"));
+		const filename = IS_TEST ? "badges.json" : "badges-all.json";
+
+		log("Reading minter badges from ${filename}...", "INFO");
+		const badgeData = JSON.parse(await fs.readFile(filename, "utf8"));
 
 		if (!badgeData || Object.keys(badgeData).length === 0) {
 			log("No badge data found in badges.json, skipping minter badge assignment", "WARNING");
@@ -324,6 +331,10 @@ async function setMinterBadgesFromJson() {
 		const validEntries = addresses.filter((_, index) => badgeNumbers[index].length > 0);
 		const validBadgeNumbers = badgeNumbers.filter((badges) => badges.length > 0);
 
+		if (validEntries.length != validBadgeNumbers.length) {
+			throw new Error("Wrong badges");
+		}
+
 		if (validEntries.length === 0) {
 			log("No valid badge assignments found, skipping", "WARNING");
 			return;
@@ -331,33 +342,45 @@ async function setMinterBadgesFromJson() {
 
 		log(`Setting badges for ${validEntries.length} addresses...`, "INFO");
 
-		const txb = new TransactionBlock();
-		txb.setGasBudget(1000000000);
+		const BATCH_SIZE = 500;
+		let totalProcessed = 0;
 
-		txb.moveCall({
-			target: `${config.PACKAGE_ID}::${MODULE_NAME}::set_bulk_preset_badges`,
-			arguments: [
-				txb.object(config.ADMIN_CAP),
-				txb.object(config.COLLECTION_ID),
-				txb.pure(validEntries),
-				txb.pure(validBadgeNumbers),
-			],
-		});
+		for (let i = 0; i < validEntries.length; i += BATCH_SIZE) {
+			const batchEnd = Math.min(i + BATCH_SIZE, validEntries.length);
+			totalProcessed += batchEnd - i;
 
-		try {
-			const result = await client.signAndExecuteTransactionBlock({
-				signer,
-				transactionBlock: txb,
-				options: { showEffects: true },
+			log(`Setting badges batch ${i + 1}-${batchEnd}`, "INFO");
+
+			const txb = new TransactionBlock();
+			txb.setGasBudget(1000000000);
+
+			txb.moveCall({
+				target: `${config.PACKAGE_ID}::${MODULE_NAME}::set_bulk_preset_badges`,
+				arguments: [
+					txb.object(config.ADMIN_CAP),
+					txb.object(config.COLLECTION_ID),
+					txb.pure(validEntries.slice(i, batchEnd)),
+					txb.pure(validBadgeNumbers.slice(i, batchEnd)),
+				],
 			});
-			log(`Successfully set badges for ${validEntries.length} addresses`, "SUCCESS");
-			log(`Transaction digest: ${result.digest}`, "INFO");
-		} catch (error) {
-			log(`Error setting minter badges: ${error.message}`, "ERROR");
-			throw error;
-		}
 
-		log(`Completed setting minter badges`, "SUCCESS");
+			try {
+				const result = await client.signAndExecuteTransactionBlock({
+					signer,
+					transactionBlock: txb,
+					options: { showEffects: true },
+				});
+				log(
+					`Set badges batch tx diges: ${result.digest} .... Progress: ${totalProcessed}/${validEntries.length}`,
+					"INFO",
+				);
+				await new Promise((resolve) => setTimeout(resolve, config.DELAY_BETWEEN_BATCHES));
+			} catch (error) {
+				log(`Error setting minter badges: ${error.message}`, "ERROR");
+				throw error;
+			}
+		}
+		log(`Successfully added all ${totalProcessed} badges`, "SUCCESS");
 	} catch (error) {
 		log(`Error reading or processing badges.json: ${error.message}`, "ERROR");
 		throw error;
@@ -373,15 +396,13 @@ async function setAttributesFromJson() {
 		log("Processing NFT attributes from JSON files...", "INFO");
 		const processedNfts = new Set();
 
-		// Determine the limit based on environment
-		const environment = process.argv[2] || "test";
 		const maxNfts =
-			environment === "test" && config.TESTNET_ATTRIBUTES_LIMIT
-				? config.TESTNET_ATTRIBUTES_LIMIT
+			IS_TEST && config.TEST_ATTRIBUTES_LIMIT
+				? config.TEST_ATTRIBUTES_LIMIT
 				: config.TOTAL_NFTS;
 
 		log(
-			`Processing attributes for first ${maxNfts} NFTs (${environment === "test" ? "testnet limit" : "full collection"})`,
+			`Processing attributes for first ${maxNfts} NFTs (${IS_TEST ? "test limit" : "full collection"})`,
 			"INFO",
 		);
 
@@ -443,10 +464,7 @@ async function setAttributesFromJson() {
 						transactionBlock: txb,
 						options: { showEffects: true },
 					});
-					log(
-						`Successfully processed attributes for ${batchNftIds.length} NFTs in current batch`,
-						"SUCCESS",
-					);
+					log(`Batch: processed attributes for ${batchNftIds.length} NFTs`, "SUCCESS");
 
 					if (i + config.BATCH_SIZE <= config.TOTAL_NFTS) {
 						// log(
@@ -489,15 +507,11 @@ async function setUrlsFromJson() {
 
 		log(`Found ${Object.keys(imageLinksData).length} URL entries in imagelinks.json`, "INFO");
 
-		// Determine the limit based on environment
-		const environment = process.argv[2] || "test";
 		const maxNfts =
-			environment === "test" && config.TESTNET_URLS_LIMIT
-				? config.TESTNET_URLS_LIMIT
-				: config.TOTAL_NFTS;
+			IS_TEST && config.TEST_URLS_LIMIT ? config.TEST_URLS_LIMIT : config.TOTAL_NFTS;
 
 		log(
-			`Processing URLs for first ${maxNfts} NFTs (${environment === "test" ? "testnet limit" : "full collection"})`,
+			`Processing URLs for first ${maxNfts} NFTs (${IS_TEST ? "test limit" : "full collection"})`,
 			"INFO",
 		);
 
@@ -539,7 +553,7 @@ async function setUrlsFromJson() {
 						transactionBlock: txb,
 						options: { showEffects: true },
 					});
-					log(`Successfully processed ${nftIds.length} URLs in current batch`, "SUCCESS");
+					log(`Batch: processed ${nftIds.length} URLs`, "SUCCESS");
 
 					if (i + config.BATCH_SIZE <= config.TOTAL_NFTS) {
 						// log(
@@ -568,11 +582,11 @@ async function setUrlsFromJson() {
 async function addRoyaltyAndLockRules() {
 	const config = getConfig();
 	const { client, signer } = getClientAndSigner();
-	const environment = process.argv[2] || "test";
+	const environment = process.argv[2];
 	let network =
 		environment === "production"
 			? Network.MAINNET
-			: environment === "test"
+			: environment === "testnet"
 				? Network.TESTNET
 				: Network.CUSTOM;
 
@@ -875,21 +889,15 @@ async function createKiosk() {
 // Run complete setup
 async function runCompleteSetup() {
 	const config = getConfig();
-	const environment = process.argv[2] || "test";
-	log(`🚀 Starting Beelievers ${environment.toUpperCase()} Setup...`, "INFO");
-	log(`Configuration: ${config.TOTAL_NFTS} NFTs, Batch Size: ${config.BATCH_SIZE}`, "INFO");
-	log(
-		`Mint Start Time: ${new Date(config.MINT_START_TIME).toISOString()} (${config.MINT_START_TIME} ms)`,
-		"INFO",
-	);
 
 	if (SKIP_PREMINT) log("⚠️ Premint will be skipped", "WARNING");
 	if (SKIP_MINTING) log("⚠️ Minting will be skipped", "WARNING");
 
 	try {
 		/*
+		 */
 		log("\n[1] Adding mythic eligible...", "INFO");
-		if (environment === "test") {
+		if (IS_TEST) {
 			await addTestMythicEligible();
 		} else {
 			await addProductionMythicEligible();
@@ -916,29 +924,17 @@ async function runCompleteSetup() {
 		await addRoyaltyAndLockRules();
 		await new Promise((resolve) => setTimeout(resolve, 2000));
 
-		 */
-
-		if (environment === "test") {
-			log("\n[7] Skipping premint on testnet, setting premint_completed to true...", "INFO");
-			await setPremintCompleted(true);
-		} else {
-			log("\n[7] Executing premint...", "INFO");
-			await executePremint();
-		}
+		// if (IS_TEST) {
+		// 	log("\n[7] Skipping premint on testnet, setting premint_completed to true...", "INFO");
+		// 	// await setPremintCompleted(true);
+		// } else {
+		log("\n[7] Executing premint...", "INFO");
+		await executePremint();
+		//}
 		await new Promise((resolve) => setTimeout(resolve, 2000));
 
 		log("\n[8] Enable minting...", "INFO");
 		await enableMinting();
-
-		log("\n🎉 Setup completed successfully!", "SUCCESS");
-		if (environment === "test") {
-			log(`   ✅ Premint skipped on testnet, manually set as completed`, "SUCCESS");
-		} else if (!SKIP_PREMINT) {
-			log(`   ✅ Premint executed`, "SUCCESS");
-		}
-		if (!SKIP_MINTING) {
-			log(`   ✅ Minting started`, "SUCCESS");
-		}
 	} catch (error) {
 		log(`\n❌ Setup failed: ${error.message}`, "ERROR");
 		throw error;
@@ -947,42 +943,36 @@ async function runCompleteSetup() {
 
 // Main function
 async function main() {
-	const operation = process.argv[2];
+	const env = process.argv[2];
+	let operation = undefined;
+	for (const a of process.argv.slice(3)) {
+		if (!a.startsWith("--")) {
+			operation = a;
+			break;
+		}
+	}
 
 	if (
-		!operation ||
-		(operation !== "test" &&
-			operation !== "local" &&
-			operation !== "production" &&
-			operation != "kiosk-create" &&
-			operation !== "test-minting")
+		env === undefined ||
+		(operation !== undefined && operation != "kiosk-create" && operation !== "test-minting")
 	) {
-		log(
+		console.log(
 			`
-🏭 Beelievers Complete Setup Script
+🏭 Beelievers Setup Script
 
 Usage:
-  Test Setup:        node setup_script.js test
-                     node setup_script.js local
-  Production Setup:  node setup_script.js production
-  Test Minting:      node setup_script.js test-minting
+  Test Setup:        node setup_script.js <env> <operation>
+
+env: testnet, localnet, production
 
 Options:
   --skip-premint     Skip the premint process
   --skip-minting     Skip starting the minting process
-
-Examples:
-  node setup_script.js test
-  node setup_script.js production
-  node setup_script.js test --skip-premint
-  node setup_script.js production --skip-minting
-  node setup_script.js test-minting
+  --test             Run reduced test setup (mythic eligible, badges, attributes, URLs, premint, minting)
 
 Commands:
-  test              - Run reduced testnet setup (mythic eligible, badges, attributes, URLs, premint, minting)
-  local             - Run complete test setup (mythic eligible, badges, attributes, URLs, premint, minting)
-  production        - Run complete production setup (mythic eligible, badges, attributes, URLs, premint, minting)
-  test-minting      - Test minting functionality only (starts minting immediately)
+  test-minting      - Test minting functionality
+  kiosk-create
 
 Required Files:
   - badges.json: Token ID to badge mapping
@@ -995,26 +985,7 @@ Test Environment:
   - Processes first 21 NFTs for attributes and URLs only
   - Uses 2 test mythic eligible addresses
   - Same batch sizes and delays as production
-  - Skips premint execution, manually sets premint_completed to true
-
-Production Environment:
-  - Uses mainnet RPC
-  - Processes all 6021 NFTs for all features
-  - Uses mythic eligible from mythic_eligible.txt
-  - Full batch sizes and delays
-
-Configuration:
-  - Test: 21 NFTs (attributes/URLs), Batch Size: 50, Premint: skipped, Mint Start: 1 hour from now
-  - Production: 6021 NFTs, Batch Size: 50, Premint: 210, Mint Start: 1 hour from now
-
-Mint Start Time Configuration:
-  - Set MINT_START_TIME in the config to your desired timestamp (in milliseconds)
-  - Examples:
-    - 1 hour from now: Date.now() + 3600000
-    - Specific date: new Date('2024-01-15T10:00:00Z').getTime()
-    - Immediate: Date.now()
-        `,
-			"INFO",
+`,
 		);
 		return;
 	}
