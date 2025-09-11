@@ -3,8 +3,8 @@
 module beelievers_mint::mint;
 
 use beelivers_auction::auction::{Self, Auction};
-use std::string::{Self, String};
 use std::ascii;
+use std::string::{Self, String};
 use sui::clock::{Self, Clock};
 use sui::display;
 use sui::event;
@@ -349,7 +349,10 @@ public fun set_nft_image(
         let m = table::borrow_mut(&mut collection.nft_metadata, nft_id);
         m.image_id = image_id.to_ascii_string();
     } else {
-        let m = NftMetadata { attrs: vec_map::empty<String, String>(), image_id: image_id.to_ascii_string() };
+        let m = NftMetadata {
+            attrs: vec_map::empty<String, String>(),
+            image_id: image_id.to_ascii_string(),
+        };
         table::add(&mut collection.nft_metadata, nft_id, m);
     };
 }
@@ -471,7 +474,62 @@ fun mint_for_sender(
     kiosk::lock(kiosk, kiosk_owner_cap, transfer_policy, nft);
 }
 
-/// Mints (end_id - start_id + 1) NFTs to the
+#[allow(lint(public_entry))]
+public entry fun mint(
+    collection: &mut BeelieversCollection,
+    transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
+    auction: &Auction,
+    kiosk: &mut kiosk::Kiosk,
+    kiosk_owner_cap: &kiosk::KioskOwnerCap,
+    clock: &Clock,
+    random: &Random,
+    ctx: &mut TxContext,
+) {
+    let sender = tx_context::sender(ctx);
+    let current_time = clock::timestamp_ms(clock);
+    let remaining_nfts = collection.remaining_nfts.length();
+
+    assert!(collection.minting_active, EMintingNotActive);
+    assert!(current_time >= collection.mint_start_time, EMintingNotActive);
+    assert!(!has_minted(collection, sender), EAlreadyMinted);
+    assert!(remaining_nfts >= 1, EInsufficientSupply);
+    assert!(object::id(auction).to_address() == collection.auction_contract, EWrongAuctionContract);
+    let (is_eligible, can_mythic) = collection.determine_mint_eligibility(sender, auction);
+    assert!(is_eligible, EUnauthorized);
+
+    collection.mint_random(transfer_policy, can_mythic, kiosk, kiosk_owner_cap, random, ctx);
+
+    collection.minted_addresses.add(sender, true);
+    if (can_mythic) {
+        collection.remaining_mythic_eligible = collection.remaining_mythic_eligible - 1;
+        collection.mythic_eligible_list.remove(sender);
+    };
+}
+
+public(package) fun mint_random(
+    collection: &mut BeelieversCollection,
+    transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
+    can_mythic: bool,
+    kiosk: &mut kiosk::Kiosk,
+    kiosk_owner_cap: &kiosk::KioskOwnerCap,
+    random: &Random,
+    ctx: &mut TxContext,
+) {
+    let remaining_nfts = collection.remaining_nfts.length() as u16;
+    let remaining_mythic = collection.remaining_mythic;
+    let start = if (can_mythic) 0 else remaining_mythic;
+    // we need to make sure that mythics will be all minted to eligible users
+    // so if number of eligible users gets to the remining mythics, we assure that
+    // they mint mythic. Note: start / end indexes start from 0.
+    let end = if (
+        can_mythic
+        && remaining_mythic >= collection.remaining_mythic_eligible && remaining_mythic >= 1
+    ) remaining_mythic-1 else remaining_nfts-1;
+    let probe = random.new_generator(ctx).generate_u16_in_range(start, end);
+    collection.mint_for_sender(probe as u64, transfer_policy, kiosk, kiosk_owner_cap, ctx);
+}
+
+///Premint NFT
 public fun premint_to_native(
     _admin_cap: &AdminCap,
     collection: &mut BeelieversCollection,
@@ -533,50 +591,6 @@ public fun postmint_to_native(
     };
 }
 
-#[allow(lint(public_entry))]
-public entry fun mint(
-    collection: &mut BeelieversCollection,
-    transfer_policy: &transfer_policy::TransferPolicy<BeelieverNFT>,
-    // REVIEW: standard objects should be at the end (so Auction should be before random etc...)
-    random: &Random,
-    clock: &Clock,
-    auction: &Auction,
-    kiosk: &mut kiosk::Kiosk,
-    kiosk_owner_cap: &kiosk::KioskOwnerCap,
-    ctx: &mut TxContext,
-) {
-    let sender = tx_context::sender(ctx);
-    let current_time = clock::timestamp_ms(clock);
-    let remaining_nfts = collection.remaining_nfts.length() as u16;
-
-    assert!(collection.minting_active, EMintingNotActive);
-    assert!(current_time >= collection.mint_start_time, EMintingNotActive);
-    assert!(!has_minted(collection, sender), EAlreadyMinted);
-    assert!(remaining_nfts >= 1, EInsufficientSupply);
-    assert!(object::id(auction).to_address() == collection.auction_contract, EWrongAuctionContract);
-
-    let (is_eligible, can_mythic) = collection.determine_mint_eligibility(sender, auction);
-    assert!(is_eligible, EUnauthorized);
-
-    let remaining_mythic = collection.remaining_mythic;
-    let start = if (can_mythic) 0 else remaining_mythic;
-    // we need to make sure that mythics will be all minted to eligible users
-    // so if number of eligible users gets to the remining mythics, we assure that
-    // they mint mythic. Note: start / end indexes start from 0.
-    let end = if (
-        can_mythic
-            && remaining_mythic >= collection.remaining_mythic_eligible && remaining_mythic >= 1
-    ) remaining_mythic-1 else remaining_nfts-1;
-    let probe = random.new_generator(ctx).generate_u16_in_range(start, end);
-    collection.mint_for_sender(probe as u64, transfer_policy, kiosk, kiosk_owner_cap, ctx);
-
-    collection.minted_addresses.add(sender, true);
-    if (can_mythic) {
-        collection.remaining_mythic_eligible = collection.remaining_mythic_eligible - 1;
-        collection.mythic_eligible_list.remove(sender);
-    }
-}
-
 /// returns (is_auction_winner, can_mint_mythic)
 fun determine_mint_eligibility(
     collection: &BeelieversCollection,
@@ -584,7 +598,7 @@ fun determine_mint_eligibility(
     auction: &Auction,
 ): (bool, bool) { if (is_mythic_eligible(collection, sender)) {
         return (true, true)
-    };  (auction::is_winner(auction, sender), false) }
+    }; (auction::is_winner(auction, sender), false) }
 
 /// returns: (total_minted, mythic_minted, normal_minted)
 public fun get_collection_stats(c: &BeelieversCollection): (u16, u16, u16) {
@@ -646,6 +660,24 @@ public(package) fun token_id(e: &NFTMinted): u16 {
 #[test_only]
 public(package) fun set_auction(c: &mut BeelieversCollection, addr: address) {
     c.auction_contract = addr;
+}
+
+#[test_only]
+public(package) fun remove_mythic_eligible(c: &mut BeelieversCollection, addr: address) {
+    if (c.mythic_eligible_list.contains(addr)) {
+        c.remaining_mythic_eligible = c.remaining_mythic_eligible - 1;
+        c.mythic_eligible_list.remove(addr);
+    };
+}
+
+#[test_only]
+public(package) fun set_remaining_nfts(c: &mut BeelieversCollection, nfts: vector<u16>) {
+    c.remaining_nfts = nfts;
+}
+
+#[test_only]
+public(package) fun set_remaining_mythic(c: &mut BeelieversCollection, remaining_mythic: u16) {
+    c.remaining_mythic = remaining_mythic;
 }
 
 #[test]

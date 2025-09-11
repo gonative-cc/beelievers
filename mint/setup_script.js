@@ -19,8 +19,8 @@ const MODULE_NAME = "mint";
 // 2. cd kiosk
 // 3. sui move publish and copy the published pkg
 const LOCAL_KIOSK_PKG = "0xc25518ca0079c243b7973f5ebe3e8a390c71ab2f2a2cad1dcd11a6066a98ca15";
-const RANDOM_PKG = "0x8";
-
+const RANDOM_OBJ = "0x8";
+const CLOCK_OBJ = "0x6";
 // Environment-specific configurations
 const CONFIGS = {
 	testnet: {
@@ -671,7 +671,7 @@ async function executePremint() {
 				tx2.object(config.TRANSFER_POLICY_ID),
 				tx2.object(kioskId),
 				tx2.object(kioskCapId),
-				tx2.object(RANDOM_PKG),
+				tx2.object(RANDOM_OBJ),
 			],
 		});
 
@@ -757,11 +757,12 @@ async function testMinting() {
 			arguments: [
 				tx2.object(config.COLLECTION_ID),
 				tx2.object(config.TRANSFER_POLICY_ID),
-				tx2.object(RANDOM_PKG),
-				tx2.object("0x6"), // clock
+
 				tx2.object(config.AUCTION_CONTRACT), // auction contract
 				tx2.object(kioskId),
 				tx2.object(kioskCapId),
+				tx2.object(CLOCK_OBJ), // clock
+				tx2.object(RANDOM_OBJ),
 			],
 		});
 
