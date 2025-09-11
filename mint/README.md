@@ -42,7 +42,7 @@ sui client ptb --move-call $auction_pkg::auction::create 30  --gas-budget 500000
 set auction_id 0x...
 ```
 
-Now we can publish mint package. During the `init` of the package, mint object is created and 
+Now we can publish mint package. During the `init` of the package, mint object is created and
 shared publicly.
 
 ```bash
@@ -56,14 +56,12 @@ Set the private key as well.
 
 For LOCALNET we need to deploy kiosk:
 
-``` bash
+```bash
 git clone https://github.com/MystenLabs/apps.git sui-apps
 cd sui-apps/kiosk
 sui move publish
 set kiosk_pkg 0x...
 ```
-
-
 
 ### Run minting scripts
 

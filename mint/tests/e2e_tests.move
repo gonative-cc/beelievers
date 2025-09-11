@@ -8,15 +8,16 @@ use beelievers_mint::mint::{
     AdminCap,
     BeelieverNFT,
     premint_to_native,
-    NFTMinted,
+    NFTMinted
 };
 use beelivers_auction::auction::{Auction, create, create_admin_cap};
 use std::unit_test::assert_eq;
+use sui::address::from_u256;
 use sui::event::events_by_type;
 use sui::random::{Self, create_for_testing, Random, shuffle};
 use sui::test_scenario::{Self, return_shared, Scenario, next_tx, return_to_address};
 use sui::transfer_policy;
-use sui::address::from_u256;
+
 const ADMIN: address = @0xffff;
 
 #[test_only]
@@ -49,14 +50,14 @@ public fun call_premint(mut scenario: Scenario, admin: address): (Scenario, vect
         let mut c: mint::BeelieversCollection = scenario.take_shared();
         let (mut kiosk, kiosk_cap) = sui::kiosk::new(scenario.ctx());
         let tp: transfer_policy::TransferPolicy<BeelieverNFT> = scenario.take_shared();
-	let r: Random = scenario.take_shared();
+        let r: Random = scenario.take_shared();
 
-	premint_to_native(&admin_cap, &mut c, &tp, &mut kiosk, &kiosk_cap, &r, scenario.ctx());
+        premint_to_native(&admin_cap, &mut c, &tp, &mut kiosk, &kiosk_cap, &r, scenario.ctx());
 
         scenario.return_to_sender(admin_cap);
         return_shared(c);
         return_shared(tp);
-	return_shared(r);
+        return_shared(r);
         sui::transfer::public_share_object(kiosk);
         sui::transfer::public_transfer(kiosk_cap, ADMIN);
         events_by_type<NFTMinted>()
@@ -83,36 +84,36 @@ fun full_e2e_tests() {
 
     scenario.next_tx(ADMIN);
     {
-	let admin_cap: AdminCap = scenario.take_from_address(ADMIN);
-	let mut auction: Auction = scenario.take_shared();
-	let mut c: mint::BeelieversCollection = scenario.take_shared();
-	let r: Random = scenario.take_shared();
+        let admin_cap: AdminCap = scenario.take_from_address(ADMIN);
+        let mut auction: Auction = scenario.take_shared();
+        let mut c: mint::BeelieversCollection = scenario.take_shared();
+        let r: Random = scenario.take_shared();
 
         auction.set_winners(request);
-	c.set_auction(object::id(&auction).to_address());
-	admin_cap.add_mythic_eligible(&mut c, vector::tabulate!(4000, |i| request[i]));
-	admin_cap.start_minting(&mut c, 0);
+        c.set_auction(object::id(&auction).to_address());
+        admin_cap.add_mythic_eligible(&mut c, vector::tabulate!(4000, |i| request[i]));
+        admin_cap.start_minting(&mut c, 0);
 
-	let mut g = random::new_generator(&r, scenario.ctx());
+        let mut g = random::new_generator(&r, scenario.ctx());
         // Mint mythic token
-	shuffle(&mut g, &mut request);
+        shuffle(&mut g, &mut request);
 
-	return_shared(r);
-	return_shared(c);
+        return_shared(r);
+        return_shared(c);
         return_shared(auction);
-	return_to_address(ADMIN, admin_cap);
+        return_to_address(ADMIN, admin_cap);
     };
 
     scenario.next_tx(@0x00);
     {
-	let mut r: Random = scenario.take_shared();
-	r.update_randomness_state_for_testing(0, b"thisisnative", scenario.ctx());
-	return_shared(r);
+        let mut r: Random = scenario.take_shared();
+        r.update_randomness_state_for_testing(0, b"thisisnative", scenario.ctx());
+        return_shared(r);
     };
 
     let mut result = vector[];
     let mut id = 0;
-    while(id < number_token_mint) {
+    while (id < number_token_mint) {
         let minter_addr: address = request[id];
         scenario.next_tx(minter_addr);
 
@@ -123,49 +124,48 @@ fun full_e2e_tests() {
         let clock = sui::clock::create_for_testing(scenario.ctx());
         let auction: Auction = scenario.take_shared();
 
-	let steps: u64 = if (id == 5800) {
-	    10
-	} else {
-	    100
-	};
+        let steps: u64 = if (id == 5800) {
+            10
+        } else {
+            100
+        };
 
-	steps.do!(|i| {
-	    let can_mythic = c.is_mythic_eligible(request[id + i]);
-	    c.mint_random(&tp, can_mythic, &mut kiosk, &kiosk_cap, &r, scenario.ctx());
-	    c.remove_mythic_eligible(request[id + i]);
-	});
+        steps.do!(|i| {
+            let can_mythic = c.is_mythic_eligible(request[id + i]);
+            c.mint_random(&tp, can_mythic, &mut kiosk, &kiosk_cap, &r, scenario.ctx());
+            c.remove_mythic_eligible(request[id + i]);
+        });
 
-	let events = events_by_type<NFTMinted>();
-	assert_eq!(events.length(), steps);
-	result.append(events);
-	id = id + steps;
+        let events = events_by_type<NFTMinted>();
+        assert_eq!(events.length(), steps);
+        result.append(events);
+        id = id + steps;
 
         return_shared(c);
         return_shared(r);
         return_shared(tp);
         return_shared(auction);
         sui::test_utils::destroy(clock);
-	sui::test_utils::destroy(kiosk);
-	sui::test_utils::destroy(kiosk_cap);
+        sui::test_utils::destroy(kiosk);
+        sui::test_utils::destroy(kiosk_cap);
     };
 
     assert_eq!(result.length(), number_token_mint);
-    let mc = result.count!(|token_event| {token_event.token_id() <= 21});
+    let mc = result.count!(|token_event| { token_event.token_id() <= 21 });
     assert_eq!(mc, 10);
 
     let mut ids = sui::table::new<u16, bool>(scenario.ctx());
     result.do!(|t| {
-	ids.add(t.token_id(), true)
+        ids.add(t.token_id(), true)
     });
 
     minted_events.do!(|t| {
-	ids.add(t.token_id(), true)
+        ids.add(t.token_id(), true)
     });
-
 
     // verify all token id mint
     6021u64.do!(|i| {
-	assert_eq!(ids.contains((i + 1) as u16), true);
+        assert_eq!(ids.contains((i + 1) as u16), true);
     });
     sui::test_utils::destroy(ids);
     scenario.end();
