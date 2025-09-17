@@ -33,6 +33,15 @@ Finalize Auction Tx and collecting reward:
 
 - 🔗 Digest: `E6PBgp5jA6vMs3rzS32nRseUiEBkDxf7WXjdsU6pL6Rz`, [event](https://suivision.xyz/txblock/E6PBgp5jA6vMs3rzS32nRseUiEBkDxf7WXjdsU6pL6Rz?tab=Events).
 
+### Beelievers NFT Mint
+
+Package ID: `0x1b4cbd991bb7e31ff60b6685bcfef6c9c724bc04a6daabb7c815eae0213001ea`
+NFT Collection ID: `0x565d980198d3bd1ec33107110ccc5ad448dacb19f1495da313cb015971bcd146`
+Transfer Policy ID: `0x23039cf016e97829afb865ba1db63e342914c11eca76f87cd4b3d3b4e8e63741`
+Treasury Kiosk: `0x5f3f8963055c7fac44340e82e88e4b79d7abfa36382b006a8e0b9b803cdfb088`
+
+Docs: [mint/README](./mint/README.md).
+
 ## Contributing
 
 Participating in open source is often a highly collaborative experience. We’re encouraged to create in public view, and we’re incentivized to welcome contributions of all kinds from people around the world.
@@ -51,6 +60,6 @@ After cloning the repository, **make sure to run `make setup-hooks`.**
 
 - use `bun format:move` or `bun format:move-all` to format your Move code.
 
-### Security
+## Security
 
-Check out [SECURITY.md](./SECURITY.md) for security concerns.
+See [contributing repo](https://github.com/gonative-cc/contributig) for reporting security vulnerability or sharing a security feedback.

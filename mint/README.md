@@ -2,6 +2,36 @@
 
 This directory contains the Beelievers NFT minting contract and complete setup infrastructure for both testnet and mainnet deployment.
 
+
+## Flow
+
+``` mermaid
+sequenceDiagram
+    actor User
+    participant BeelieversCollection
+    participant Auction
+    participant RNG
+    participant Kiosk
+
+    User->>BeelieversCollection: mint()
+    BeelieversCollection->>Auction: isWinner(user)
+    Auction-->>BeelieversCollection: winner?
+    alt user is not winner
+        BeelieversCollection-->>User: abort
+    else user is winner
+        BeelieversCollection->>BeelieversCollection: qualifiedForMythic(user)
+        alt qualified for Mythic
+            BeelieversCollection->>RNG: run(scope = Mythic)
+        else not qualified
+            BeelieversCollection->>RNG: run(scope = Normal)
+        end
+        RNG-->>BeelieversCollection: random NFT ID
+        BeelieversCollection->>BeelieversCollection: checkEarnedBadges(user)
+        BeelieversCollection->>BeelieversCollection: create BeelieverNFT(ID)
+        BeelieversCollection->>Kiosk: lock(NFT, user, transferPolicy)
+    end
+```
+
 ## 🏗️ Contract Overview
 
 ### Key Features
@@ -127,9 +157,10 @@ node setup_script.js production --skip-minting
 - **Format**: `{ "1": "https://walrus.tusky.io/image1.jpg" }`
 - **Count**: 6,021 entries (one per NFT)
 
-### 5. `JSON/` Directory
+### 5. NFT Metadata
 
-- **Purpose**: Individual NFT metadata files
+Stored in `JSON/*.json*` files:
+
 - **Format**: One JSON file per NFT (1.json to 6021.json)
 - **Structure**:
 
@@ -146,7 +177,6 @@ node setup_script.js production --skip-minting
 
 ### Test Environment
 
-- **RPC**: Testnet (`https://fullnode.testnet.sui.io:443`)
 - **Package ID**: `0x3064d43ee6cc4d703d4c10089786f0ae805b24d2d031326520131d78667ffc2c`
 - **Processing**: First 21 NFTs only (attributes & URLs)
 - **Mythic Eligible**: 9 hardcoded test addresses
@@ -154,11 +184,12 @@ node setup_script.js production --skip-minting
 
 ### Production Environment
 
-- **RPC**: Mainnet (`https://fullnode.mainnet.sui.io:443`)
-- **Package ID**: (To be set)
+- **Package ID**: `0x161524be15687cca96dec58146568622458905c30479452351f231cac5d64c41`
 - **Processing**: All 6,021 NFTs
 - **Mythic Eligible**: From `mythic_eligible.txt` (3,978 addresses)
 - **Premint**: Full execution (NFTs #1-210)
+
+See `./setup_script.js` for more details.
 
 ## 🎯 Setup Process
 
@@ -174,77 +205,17 @@ node setup_script.js production --skip-minting
 8. **Execute Premint** - Mint initial NFTs (production only)
 9. **Start Minting** - Enable public minting
 
-### Batch Processing
-
-- **Batch Size**: 50 NFTs per transaction
-- **Delay**: 5 seconds between batches
-- **Gas Budget**: 1 SUI per transaction
-
-## 🔑 Key Contract Functions
-
-### Admin Functions
-
-```move
-// Add mythic eligible addresses
-add_mythic_eligible(admin_cap, collection, addresses)
-
-// Set badge names
-set_bulk_badge_names(admin_cap, collection, badge_ids, names)
-
-// Set minter badges
-set_bulk_minter_badges(admin_cap, collection, addresses, badges)
-
-// Set NFT attributes
-set_bulk_nft_attributes(admin_cap, collection, nft_ids, keys, values)
-
-// Set NFT URLs
-set_bulk_nft_urls(admin_cap, collection, nft_ids, urls)
-
-// Start minting
-start_minting(admin_cap, collection, start_time)
-```
-
-### Public Functions
-
-```move
-// Mint an NFT
-mint(collection, transfer_policy, random, clock, auction, kiosk, kiosk_cap)
-
-// Check eligibility
-is_mythic_eligible(collection, address)
-has_minted(collection, address)
-
-// Get collection stats
-get_collection_stats(collection)
-```
-
 ## 🧪 Testing
-
-### Run Contract Tests
 
 ```bash
 # Build & deploy testnet contract
 sui move build
-node setup_script.js test
+node setup_script.js local test
 ```
-
-### Test Minting
-
-```bash
-# Test minting functionality after setup
-node setup_script.js test-minting
-```
-
-### Check Collection Stats
 
 The setup script includes automatic stats checking after operations.
 
 ## ⚙️ Configuration
-
-### Environment Variables
-
-- `ADMIN_PRIVATE_KEY`: Admin wallet private key (set in script)
-- `MINT_START_TIME`: Timestamp when minting starts (in milliseconds)
 
 ### Customization
 
@@ -254,15 +225,11 @@ The setup script includes automatic stats checking after operations.
 
 ## 🚨 Error Handling
 
-### Common Errors
+### ErrorCodes
 
-- `EInsufficientSupply`: No more NFTs available
-- `EMintingNotActive`: Minting not started or paused
-- `EUnauthorized`: Address not eligible for minting
-- `EAlreadyMinted`: Address already minted
-- `EInsufficientPayment`: Insufficient payment amount
+See `E*` constants in [mint.move](./sources/mint.move).
 
-### Error Recovery
+### Error Recovery during Setup
 
 - Failed batches can be retried
 - Use `--skip-premint` or `--skip-minting` to resume from specific step
@@ -273,16 +240,13 @@ The setup script includes automatic stats checking after operations.
 ### Collection Stats
 
 ```move
-// Returns: (total_minted, mythic_minted, normal_minted, available_mythics, available_normals)
 get_collection_stats(collection)
 ```
 
 ### Event Monitoring
 
 - `NFTMinted`: Emitted when NFT is minted
-- `MythicEligibleAdded`: Emitted when mythic eligible added
 - `MintingStarted`: Emitted when minting starts
-- `PremintCompleted`: Emitted when premint finishes
 
 ## 🔒 Security Features
 
