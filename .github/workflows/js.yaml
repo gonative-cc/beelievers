@@ -1,4 +1,9 @@
 name: JS
+
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   merge_group:
     types: [checks_requested]
@@ -16,16 +21,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
 
-      - run: bun install
+      ### version with cache
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      ###
 
-      # - name: eslint
-      #   run: "bun run lint"
+      - name: eslint
+        run: "pnpm run lint"
 
-      # - name: typecheck
-      #   run: "bun run typecheck"
+      - name: typecheck
+        run: "pnpm run typecheck"
+
+      - name: build
+        run: "pnpm run build"
 
       - name: test
-        run: "bun run test"
+        run: "pnpm run test"
