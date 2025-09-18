@@ -30,18 +30,18 @@ We should prepare the auction winner list: a text file with Sui addresses, one a
 Set the winner list to auction
 
 ```bash
-bun ./build/beelievers_auction_finalize.js set-winners data.txt
+bun beelievers_auction_finalize.js set-winners data.txt
 ```
 
 Finalize the auction with clearing price set in the auction.config.ts.
 Before running, double check if you need to specify `discounts` in the config.
 
 ```bash
-bun ./build/beelievers_auction_finalize.js finalize
+bun beelievers_auction_finalize.js finalize
 ```
 
 Run Ruffle
 
 ```bash
-bun ./build/beelievers_auction_finalize.js raffle
+bun beelievers_auction_finalize.js raffle
 ```

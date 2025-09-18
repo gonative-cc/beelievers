@@ -7,7 +7,7 @@ This script reads a list of addresses from a CSV file, resolves any `.sui` names
 ### 1. Install dependencies
 
 ```bash
-pnpm install
+bun install
 ```
 
 ### 2. Create `.env` file
@@ -22,27 +22,18 @@ NETWORK="devnet"
 
 ### 3. Execute scripts
 
-Firstly we need to build the JS files:
-
-```bash
-pnpm build
-```
-
 Execute the pre-processor. It takes list of `csv` files and cleans it up, and resolves any Sui NS.
 NOTE: Remember to run it on mainnet so the `suins` are resolved correctly.
 
 ```bash
-node build/wl-pre-processor.js ./file1.csv ./file2.csv ./file3.csv --output final_WL.csv
+bun wl-pre-processor.js ./file1.csv ./file2.csv ./file3.csv --output final_WL.csv
 ```
 
 Execute the script.
 Replace the file path and adjusting the batch size as needed.
 
 ```bash
-node build/wl-nft-minter.js --file ./final_WL.csv --batch-size 500
+bun wl-nft-minter.js --file ./final_WL.csv --batch-size 500
 ```
 
 This will process all addresses from the file and generate a report on which addresses had their NFT minted.
-
-NOTE: We can also run ts scripts directly through ts-node. That would require installing ts-node as a dev dependency.
-The running format is: `node --loader ts-node/esm scripts/<filename.ts>`.
