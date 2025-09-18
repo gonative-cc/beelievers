@@ -328,7 +328,7 @@ public fun set_future_badges(
     };
 }
 
-/// Allows an NFT owner to upsert new budges
+/// Allows an NFT owner to upsert new badges
 public fun upsert_nft_badges(c: &BeelieversCollection, nft: &mut BeelieverNFT) {
     if (!c.future_badges.contains(nft.token_id)) return;
     c.future_badges[nft.token_id].do!(|b| {
