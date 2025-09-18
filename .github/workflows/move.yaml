@@ -21,7 +21,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: run Sui Move test
-        run: bash ./contrib/ci/run-move-tests.sh
+        run: |
+          for name in */Move.toml; do
+            echo testing $(dirname $name)
+            cd $(dirname $name) && sui move test && cd .. || exit 1
+          done
 
   prettier:
     runs-on: ubuntu-latest
