@@ -1,4 +1,9 @@
 name: Markdown
+
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   merge_group:
     types: [checks_requested]
@@ -12,7 +17,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       # lint only changed files
