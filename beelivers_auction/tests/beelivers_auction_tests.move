@@ -17,7 +17,7 @@ use beelivers_auction::auction::{
     ENotAdmin,
     ENotPause
 };
-use std::unit_test::{assert_eq, assert_ref_eq};
+use std::unit_test::assert_eq;
 use sui::clock::create_for_testing;
 use sui::coin::{mint_for_testing, Coin};
 use sui::sui::SUI;
@@ -174,6 +174,7 @@ fun withdraw_token_without_premission_tests() {
     abort
 }
 
+#[allow(unused_assignment)]
 #[test, expected_failure(abort_code = ENoBidFound)]
 fun withdraw_token_second_time_should_failed_tests() {
     let admin = @0x01;

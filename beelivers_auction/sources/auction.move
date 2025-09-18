@@ -484,5 +484,6 @@ fun test_bisect_address() {
 
 #[test_only]
 public fun set_winners(a: &mut Auction, winners: vector<address>) {
+    a.finalized = true;
     a.winners = winners;
 }

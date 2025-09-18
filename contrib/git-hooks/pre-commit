@@ -17,5 +17,5 @@ for f in $(echo $STAGED_MOVE_FILES | awk -F "/" '{print $1}' | uniq); do
     cd -
 done
 
-prettier-move --config .prettier-move.json $STAGED_MOVE_FILES --write
+prettier-move --config .prettier-move.json --write $STAGED_MOVE_FILES
 git add $STAGED_MOVE_FILES

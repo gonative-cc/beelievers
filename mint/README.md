@@ -2,10 +2,9 @@
 
 This directory contains the Beelievers NFT minting contract and complete setup infrastructure for both testnet and mainnet deployment.
 
-
 ## Flow
 
-``` mermaid
+```mermaid
 sequenceDiagram
     actor User
     participant BeelieversCollection

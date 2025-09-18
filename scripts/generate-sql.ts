@@ -18,7 +18,7 @@ async function main() {
 		);
 
 	program.parse(process.argv);
-	const inputFile = program.args[0];
+	const inputFile = program.args[0]!;
 	const { amount, typ, batchSize } = program.opts();
 
 	if (typeof amount === "undefined" || typeof typ === "undefined") {

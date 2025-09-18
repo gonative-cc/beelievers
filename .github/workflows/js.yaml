@@ -1,4 +1,9 @@
 name: JS
+
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   merge_group:
     types: [checks_requested]
@@ -16,16 +21,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
 
-      - run: bun install
+      # @v2
+      - uses: oven-sh/setup-bun@22457c87c1b161cf7dde222c3e82b2b5f8d2bed2
+      - run: bun ci
 
-      # - name: eslint
-      #   run: "bun run lint"
+      - name: eslint
+        run: "bun run lint"
 
-      # - name: typecheck
-      #   run: "bun run typecheck"
+      - name: typecheck
+        run: "bun run typecheck"
 
       - name: test
         run: "bun run test"

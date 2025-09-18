@@ -1,6 +1,6 @@
 setup-hooks:
 	@cd .git/hooks; ln -s -f ../../contrib/git-hooks/* ./
-	@pnpm install -g prettier @mysten/prettier-plugin-move
+	@bun install -g prettier @mysten/prettier-plugin-move
 
 # add license header to every source file
 add-license:

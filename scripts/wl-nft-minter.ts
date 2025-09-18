@@ -78,10 +78,9 @@ async function main() {
 	}
 
 	console.log(`\n⚙️  Executing ${batches.length} transactions in sequence...`);
-	for (let i = 0; i < batches.length; i++) {
-		const batch = batches[i];
-		const batchNumber = i + 1;
-
+	let batchNumber = 0;
+	for (const batch of batches) {
+		++batchNumber;
 		console.log(`\n--- Processing Batch ${batchNumber}/${batches.length} ---`);
 		if (batch.length === 0) {
 			console.log("   Skipping empty batch.");

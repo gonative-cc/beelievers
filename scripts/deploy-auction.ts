@@ -68,7 +68,7 @@ async function main() {
 	if (result.effects?.status.status === "success") {
 		console.log(`✅ Auction finalize successful!`);
 		console.log(`   🔗 Digest: ${result.digest}`);
-		const data = result.events?.[0].parsedJson as any;
+		const data = result.events?.[0]?.parsedJson as any;
 		console.log(`ADMIN_CAP_ID = ${data["admin_cap_id"]}`);
 		console.log(`AUCTION_ID= ${data["auction_id"]}`);
 	} else {
