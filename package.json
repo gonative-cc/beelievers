@@ -15,16 +15,16 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@mysten/sui": "^1.37.2",
-    "commander": "^14.0.0",
+    "@mysten/sui": "^1.45.0",
+    "commander": "^14.0.2",
     "csv-parse": "^6.1.0",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.3",
     "radash": "^12.1.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^24.2.1",
-    "typescript": "^5.9.2"
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "typescript": "^5"
