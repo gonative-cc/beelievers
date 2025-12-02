@@ -49,7 +49,7 @@ public struct Lockdrop has key {
     accepted: vector<TypeName>,
     vault: sui::bag::Bag,
     /// User accounting (Deposits).
-    /// Key: User Address, Value: VecMap mapping CoinType -> Balance Amount
+    /// Key: User Address, Value: vector mapping CoinType index (based on the accepted coins) -> Total balance Amount
     deposits: Table<address, vector<u64>>,
     /// Withdraw rates. Withdraw Amount = deposit[i] * rates[i] / divisor.
     rates: vector<u64>,
@@ -116,11 +116,12 @@ public fun deposit<T>(
 
     // 2. Handle User Accounting
     let total_amount = if (!lockdrop.deposits.contains(sender)) {
-        let mut d = zeros_vector(lockdrop.accepted.length());
-        let a = &mut d[idx];
-        *a = *a + amount;
-        lockdrop.deposits.add(sender, d);
-        *a
+        let mut user_deposits = zeros_vector(lockdrop.accepted.length());
+        let a = &mut user_deposits[idx];
+        *a = amount;
+        let a_cpy = *a;
+        lockdrop.deposits.add(sender, user_deposits);
+        a_cpy
     } else {
         let a = &mut lockdrop.deposits[sender][idx];
         *a = *a + amount;
@@ -143,6 +144,7 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
     assert!(*lockdrop.nbtc_type.borrow() == result_type, EResultCoinMismatch);
     assert!(lockdrop.rates.length() > 0, ERateNotSet);
 
+    // remove user deposit to prevent double spend
     let deposits = lockdrop.deposits.remove(sender);
     let mut total_claim = 0;
     let mut i = 0;
@@ -205,11 +207,7 @@ public fun withdraw_deposit_to_swap<T>(
 }
 
 // Can deposit multiple times, but each time must be the same coin
-public fun deposit_nbtc<ResultCoin>(
-    _: &AdminCap,
-    lockdrop: &mut Lockdrop,
-    coin_in: Coin<ResultCoin>,
-) {
+public fun deposit_nbtc<ResultCoin>(_: &AdminCap, lockdrop: &mut Lockdrop, nBTC: Coin<ResultCoin>) {
     let type_key = with_defining_ids<ResultCoin>();
 
     if (lockdrop.nbtc_type.is_none()) {
@@ -219,10 +217,10 @@ public fun deposit_nbtc<ResultCoin>(
     };
 
     if (!lockdrop.vault.contains(type_key)) {
-        lockdrop.vault.add(type_key, coin::into_balance(coin_in));
+        lockdrop.vault.add(type_key, nBTC.into_balance());
     } else {
         let bal: &mut Balance<ResultCoin> = lockdrop.vault.borrow_mut(type_key);
-        bal.join(coin_in.into_balance());
+        bal.join(nBTC.into_balance());
     };
 }
 
@@ -249,3 +247,29 @@ fun zeros_vector(len: u64): vector<u64> {
     len.do!(|_| v.push_back(0));
     v
 }
+
+#[test_only]
+public fun create_admin_cap(ctx: &mut TxContext): AdminCap {
+    AdminCap { id: object::new(ctx) }
+}
+
+#[test_only]
+public fun get_start_time(lockdrop: &Lockdrop): u64 { lockdrop.start_time }
+
+#[test_only]
+public fun get_end_time(lockdrop: &Lockdrop): u64 { lockdrop.end_time }
+
+#[test_only]
+public fun is_paused(lockdrop: &Lockdrop): bool { lockdrop.paused }
+
+#[test_only]
+public fun get_accepted(lockdrop: &Lockdrop): vector<TypeName> { lockdrop.accepted }
+
+#[test_only]
+public fun get_nbtc_type(lockdrop: &Lockdrop): Option<TypeName> { lockdrop.nbtc_type }
+
+#[test_only]
+public fun get_rates(lockdrop: &Lockdrop): vector<u64> { lockdrop.rates }
+
+#[test_only]
+public fun get_rates_divisor(lockdrop: &Lockdrop): u64 { lockdrop.rates_divisor }
