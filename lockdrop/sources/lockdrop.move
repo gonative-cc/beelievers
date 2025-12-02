@@ -25,6 +25,7 @@ public struct DepositEvent has copy, drop {
     user: address,
     coin_type: TypeName,
     amount: u64,
+    total_amount: u64,
 }
 
 public struct WithdrawEvent has copy, drop {
@@ -114,20 +115,23 @@ public fun deposit<T>(
     };
 
     // 2. Handle User Accounting
-    if (!lockdrop.deposits.contains(sender)) {
+    let total_amount = if (!lockdrop.deposits.contains(sender)) {
         let mut d = zeros_vector(lockdrop.accepted.length());
         let a = &mut d[idx];
         *a = *a + amount;
         lockdrop.deposits.add(sender, d);
+        *a
     } else {
         let a = &mut lockdrop.deposits[sender][idx];
         *a = *a + amount;
+        *a
     };
 
     event::emit(DepositEvent {
         user: sender,
         coin_type,
         amount,
+        total_amount,
     });
 }
 
