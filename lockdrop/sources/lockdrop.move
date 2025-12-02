@@ -4,7 +4,6 @@ use std::type_name::{TypeName, with_defining_ids};
 use sui::balance::Balance;
 use sui::clock::Clock;
 use sui::coin::{Self, Coin};
-use sui::dynamic_field;
 use sui::event;
 use sui::sui::SUI;
 use sui::table::{Self, Table};
@@ -14,6 +13,7 @@ const EContractPaused: u64 = 1;
 const EInvalidTime: u64 = 2;
 const ECoinNotAccepted: u64 = 3;
 const ECoinAlreadyThere: u64 = 4;
+const EStarted: u64 = 5;
 const ERateNotSet: u64 = 6;
 const EResultCoinMismatch: u64 = 7;
 const ELockdropEnded: u64 = 8;
@@ -52,7 +52,7 @@ public struct Lockdrop has key {
     deposits: Table<address, vector<u64>>,
     /// Withdraw rates. Withdraw Amount = deposit[i] * rates[i] / divisor.
     rates: vector<u64>,
-    rate_divisor: u64,
+    rates_divisor: u64,
 }
 
 // === Init ===
@@ -80,7 +80,7 @@ public fun new(_: &AdminCap, start: u64, end: u64, ctx: &mut TxContext) {
         vault: sui::bag::new(ctx),
         deposits: table::new(ctx),
         rates: vector::empty(),
-        rate_divisor: 0,
+        rates_divisor: 0,
     };
 
     transfer::share_object(lockdrop);
@@ -106,11 +106,11 @@ public fun deposit<T>(
     let b = coin_in.into_balance();
 
     // 1. Handle Physical Coin Storage
-    if (lockdrop.vault.contains(idx)) {
-        lockdrop.vault.add(idx, b);
-    } else {
-        let balance: &mut Balance<T> = lockdrop.vault.borrow_mut(idx);
+    if (lockdrop.vault.contains(coin_type)) {
+        let balance: &mut Balance<T> = lockdrop.vault.borrow_mut(coin_type);
         balance.join(b);
+    } else {
+        lockdrop.vault.add(coin_type, b);
     };
 
     // 2. Handle User Accounting
@@ -144,7 +144,7 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
     let mut i = 0;
     let len = lockdrop.accepted.length();
     while (i < len) {
-        total_claim = total_claim + deposits[i] * lockdrop.rates[i];
+        total_claim = total_claim + deposits[i] * lockdrop.rates[i] / lockdrop.rates_divisor;
         i = i + 1;
     };
 
@@ -166,8 +166,11 @@ public fun get_user_deposits(lockdrop: &Lockdrop, user: address): vector<u64> {
 
 // === Admin Functions (Management) ===
 
-// NOTE: should be done before the lockdrop is activeo
-public fun add_accepted_coin<T>(_: &AdminCap, lockdrop: &mut Lockdrop) {
+// NOTE: should be done before the lockdrop is active
+public fun add_accepted_coin<T>(_: &AdminCap, lockdrop: &mut Lockdrop, clock: &Clock) {
+    let now = clock.timestamp_ms();
+    assert!(now < lockdrop.start_time, EStarted);
+
     let type_key = with_defining_ids<T>();
     assert!(!lockdrop.accepted.contains(&type_key), ECoinAlreadyThere);
     lockdrop.accepted.push_back(type_key);
@@ -182,7 +185,7 @@ public fun set_pause(_: &AdminCap, lockdrop: &mut Lockdrop, is_paused: bool) {
     lockdrop.paused = is_paused;
 }
 
-public fun withdraw_deposits_to_swap<T>(
+public fun withdraw_deposit_to_swap<T>(
     _: &AdminCap,
     lockdrop: &mut Lockdrop,
     clock: &Clock,
@@ -192,8 +195,9 @@ public fun withdraw_deposits_to_swap<T>(
     assert!(now > lockdrop.end_time, ELockdropStillActive);
 
     let type_key = with_defining_ids<T>();
-    let bal = dynamic_field::remove<TypeName, Balance<T>>(&mut lockdrop.id, type_key);
-    coin::from_balance(bal, ctx)
+    let balance: &mut Balance<T> = lockdrop.vault.borrow_mut(type_key);
+
+    coin::from_balance(balance.withdraw_all(), ctx)
 }
 
 // Can deposit multiple times, but each time must be the same coin
@@ -210,18 +214,19 @@ public fun deposit_nbtc<ResultCoin>(
         assert!(*lockdrop.nbtc_type.borrow() == type_key, EResultCoinMismatch);
     };
 
-    if (!dynamic_field::exists_(&lockdrop.id, type_key)) {
-        dynamic_field::add(&mut lockdrop.id, type_key, coin::into_balance(coin_in));
+    if (!lockdrop.vault.contains(type_key)) {
+        lockdrop.vault.add(type_key, coin::into_balance(coin_in));
     } else {
-        let bal: &mut Balance<ResultCoin> = dynamic_field::borrow_mut(&mut lockdrop.id, type_key);
+        let bal: &mut Balance<ResultCoin> = lockdrop.vault.borrow_mut(type_key);
         bal.join(coin_in.into_balance());
     };
 }
 
 public fun set_rates(_: &AdminCap, lockdrop: &mut Lockdrop, rates: vector<u64>, divisor: u64) {
     assert!(rates.length() == lockdrop.accepted.length(), EWrongLen);
+    assert!(divisor > 0);
     lockdrop.rates = rates;
-    lockdrop.rate_divisor = divisor;
+    lockdrop.rates_divisor = divisor;
 }
 
 //
