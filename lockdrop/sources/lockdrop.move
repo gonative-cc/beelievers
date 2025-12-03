@@ -11,14 +11,12 @@ use sui::table::{Self, Table};
 // === Errors ===
 const EContractPaused: u64 = 1;
 const EInvalidTime: u64 = 2;
-const ECoinNotAccepted: u64 = 3;
-const ECoinAlreadyThere: u64 = 4;
+const EWrongCoin: u64 = 3;
 const EStarted: u64 = 5;
 const ERateNotSet: u64 = 6;
-const EResultCoinMismatch: u64 = 7;
+const EWrongLen: u64 = 7;
 const ELockdropEnded: u64 = 8;
 const ELockdropStillActive: u64 = 9;
-const EWrongLen: u64 = 10;
 
 // === Events ===
 public struct DepositEvent has copy, drop {
@@ -139,7 +137,7 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
     let sender = ctx.sender();
     let result_type = with_defining_ids<ResultCoin>();
 
-    assert!(lockdrop.nbtc_type.is_some_and!(|t| t == result_type), EResultCoinMismatch);
+    assert!(lockdrop.nbtc_type.is_some_and!(|t| t == result_type), EWrongCoin);
     assert!(lockdrop.rates.length() > 0, ERateNotSet);
 
     // remove user deposit to prevent double spend
@@ -176,7 +174,7 @@ public fun add_accepted_coin<T>(lockdrop: &mut Lockdrop, _: &AdminCap, clock: &C
     assert!(now < lockdrop.start_time, EStarted);
 
     let type_key = with_defining_ids<T>();
-    assert!(!lockdrop.accepted.contains(&type_key), ECoinAlreadyThere);
+    assert!(!lockdrop.accepted.contains(&type_key), EWrongCoin);
     lockdrop.accepted.push_back(type_key);
 }
 
@@ -211,7 +209,7 @@ public fun deposit_nbtc<ResultCoin>(lockdrop: &mut Lockdrop, _: &AdminCap, nBTC:
     if (lockdrop.nbtc_type.is_none()) {
         lockdrop.nbtc_type.fill(type_key);
     } else {
-        assert!(*lockdrop.nbtc_type.borrow() == type_key, EResultCoinMismatch);
+        assert!(*lockdrop.nbtc_type.borrow() == type_key, EWrongCoin);
     };
 
     if (!lockdrop.vault.contains(type_key)) {
@@ -236,7 +234,7 @@ public fun set_rates(lockdrop: &mut Lockdrop, _: &AdminCap, rates: vector<u64>, 
 public(package) fun get_cointype<DepositCoin>(lockdrop: &Lockdrop): (u64, TypeName) {
     let typename = with_defining_ids<DepositCoin>();
     let (ok, idx) = lockdrop.accepted.index_of(&typename);
-    assert!(ok, ECoinNotAccepted);
+    assert!(ok, EWrongCoin);
     (idx, typename)
 }
 
