@@ -119,9 +119,8 @@ public fun deposit<T>(
         let mut user_deposits = zeros_vector(lockdrop.accepted.length());
         let a = &mut user_deposits[idx];
         *a = amount;
-        let a_cpy = *a;
         lockdrop.deposits.add(sender, user_deposits);
-        a_cpy
+        amount
     } else {
         let a = &mut lockdrop.deposits[sender][idx];
         *a = *a + amount;
@@ -140,8 +139,7 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
     let sender = ctx.sender();
     let result_type = with_defining_ids<ResultCoin>();
 
-    assert!(lockdrop.nbtc_type.is_some(), EResultCoinMismatch);
-    assert!(*lockdrop.nbtc_type.borrow() == result_type, EResultCoinMismatch);
+    assert!(lockdrop.nbtc_type.is_some_and!(|t| t == result_type), EResultCoinMismatch);
     assert!(lockdrop.rates.length() > 0, ERateNotSet);
 
     // remove user deposit to prevent double spend
@@ -243,9 +241,7 @@ public(package) fun get_cointype<DepositCoin>(lockdrop: &Lockdrop): (u64, TypeNa
 }
 
 fun zeros_vector(len: u64): vector<u64> {
-    let mut v = vector::empty<u64>();
-    len.do!(|_| v.push_back(0));
-    v
+    vector::tabulate!(len, |_| 0)
 }
 
 #[test_only]
