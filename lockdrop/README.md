@@ -7,7 +7,6 @@ This is paired with the Hive Point campaign.
 
 ## Spec
 
-
 Roles:
 
 - Users
@@ -18,7 +17,6 @@ Contract attributes
 - list of accepted coins
 - start time
 - end time
-
 
 ## Flow
 

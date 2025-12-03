@@ -173,7 +173,7 @@ public fun get_user_deposits(lockdrop: &Lockdrop, user: address): vector<u64> {
 // === Admin Functions (Management) ===
 
 // NOTE: should be done before the lockdrop is active
-public fun add_accepted_coin<T>(_: &AdminCap, lockdrop: &mut Lockdrop, clock: &Clock) {
+public fun add_accepted_coin<T>(lockdrop: &mut Lockdrop, _: &AdminCap, clock: &Clock) {
     let now = clock.timestamp_ms();
     assert!(now < lockdrop.start_time, EStarted);
 
@@ -182,18 +182,18 @@ public fun add_accepted_coin<T>(_: &AdminCap, lockdrop: &mut Lockdrop, clock: &C
     lockdrop.accepted.push_back(type_key);
 }
 
-public fun set_time(_: &AdminCap, lockdrop: &mut Lockdrop, start: u64, end: u64) {
+public fun set_time(lockdrop: &mut Lockdrop, _: &AdminCap, start: u64, end: u64) {
     lockdrop.start_time = start;
     lockdrop.end_time = end;
 }
 
-public fun set_pause(_: &AdminCap, lockdrop: &mut Lockdrop, is_paused: bool) {
+public fun set_pause(lockdrop: &mut Lockdrop, _: &AdminCap, is_paused: bool) {
     lockdrop.paused = is_paused;
 }
 
 public fun withdraw_deposit_to_swap<T>(
-    _: &AdminCap,
     lockdrop: &mut Lockdrop,
+    _: &AdminCap,
     clock: &Clock,
     ctx: &mut TxContext,
 ): Coin<T> {
@@ -207,7 +207,7 @@ public fun withdraw_deposit_to_swap<T>(
 }
 
 // Can deposit multiple times, but each time must be the same coin
-public fun deposit_nbtc<ResultCoin>(_: &AdminCap, lockdrop: &mut Lockdrop, nBTC: Coin<ResultCoin>) {
+public fun deposit_nbtc<ResultCoin>(lockdrop: &mut Lockdrop, _: &AdminCap, nBTC: Coin<ResultCoin>) {
     let type_key = with_defining_ids<ResultCoin>();
 
     if (lockdrop.nbtc_type.is_none()) {
@@ -224,7 +224,7 @@ public fun deposit_nbtc<ResultCoin>(_: &AdminCap, lockdrop: &mut Lockdrop, nBTC:
     };
 }
 
-public fun set_rates(_: &AdminCap, lockdrop: &mut Lockdrop, rates: vector<u64>, divisor: u64) {
+public fun set_rates(lockdrop: &mut Lockdrop, _: &AdminCap, rates: vector<u64>, divisor: u64) {
     assert!(rates.length() == lockdrop.accepted.length(), EWrongLen);
     assert!(divisor > 0);
     lockdrop.rates = rates;
