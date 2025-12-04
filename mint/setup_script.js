@@ -12,7 +12,7 @@ import { TransferPolicyTransaction } from "@mysten/kiosk";
 // import { Secp256k1Keypair } from "@mysten/sui.js/keypairs/secp256k1";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 
-const ADMIN_PRIVATE_KEY = "";
+export const ADMIN_PRIVATE_KEY = "";
 const MODULE_NAME = "mint";
 // on localnet kiosk is not published.
 // 1. Download https://github.com/MystenLabs/apps
@@ -22,7 +22,7 @@ const LOCAL_KIOSK_PKG = "0xc25518ca0079c243b7973f5ebe3e8a390c71ab2f2a2cad1dcd11a
 const RANDOM_OBJ = "0x8";
 const CLOCK_OBJ = "0x6";
 // Environment-specific configurations
-const CONFIGS = {
+export const CONFIGS = {
 	testnet: {
 		AUCTION_CONTRACT: "0x60f6241088efad8dea782dfbf0071aaf58cb1baa60388f4b5e66959f7eec7ef6",
 		PACKAGE_ID: "0xae0aab765399e42c536b26ee8044efbcdfd4346926a88b26847bf5541cde45ed",
@@ -102,7 +102,7 @@ function log(message, type = "INFO") {
 	console.log(`[${timestamp}] [${env}] ${emoji} ${message}`);
 }
 
-function suiprivkeyToHex(suiprivkey) {
+export function suiprivkeyToHex(suiprivkey) {
 	const decoded = bech32.decode(suiprivkey);
 	const bytes = bech32.fromWords(decoded.words);
 	const privateKeyBytes = bytes.slice(1);
@@ -1006,4 +1006,3 @@ Test Environment:
 	}
 }
 
-main();
