@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@mysten/sui": "^1.45.0",
+    "bech32": "^2.0.0",
     "commander": "^14.0.2",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.3",

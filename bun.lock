@@ -5,16 +5,17 @@
     "": {
       "name": "beelievers-nft",
       "dependencies": {
-        "@mysten/sui": "^1.37.2",
-        "commander": "^14.0.0",
+        "@mysten/sui": "^1.45.0",
+        "bech32": "^2.0.0",
+        "commander": "^14.0.2",
         "csv-parse": "^6.1.0",
-        "dotenv": "^17.2.1",
+        "dotenv": "^17.2.3",
         "radash": "^12.1.1",
       },
       "devDependencies": {
         "@types/bun": "latest",
-        "@types/node": "^24.2.1",
-        "typescript": "^5.9.2",
+        "@types/node": "^24.10.1",
+        "typescript": "^5.9.3",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -57,6 +58,8 @@
     "@types/bun": ["@types/bun@1.3.3", "", { "dependencies": { "bun-types": "1.3.3" } }, "sha512-ogrKbJ2X5N0kWLLFKeytG0eHDleBYtngtlbu9cyBKFtNL3cnpDZkNdQj8flVf6WTZUX5ulI9AY1oa7ljhSrp+g=="],
 
     "@types/node": ["@types/node@24.10.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ=="],
+
+    "bech32": ["bech32@2.0.0", "", {}, "sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg=="],
 
     "bun-types": ["bun-types@1.3.3", "", { "dependencies": { "@types/node": "*" } }, "sha512-z3Xwlg7j2l9JY27x5Qn3Wlyos8YAp0kKRlrePAOjgjMGS5IG6E7Jnlx736vH9UVI4wUICwwhC9anYL++XeOgTQ=="],
 
