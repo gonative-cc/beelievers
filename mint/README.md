@@ -71,16 +71,18 @@ sui client ptb --move-call $auction_pkg::auction::create 30  --gas-budget 500000
 set auction_id 0x...
 ```
 
-Now we can publish mint package. During the `init` of the package, mint object is created and
-shared publicly.
+Open `./setup_script.js` and set `AUCTION_CONTRACT` to the `auction_id`.
+
+Now we can publish mint package.
 
 ```bash
 cd ../mint
 sui client publish --gas-budget 500000000
 ```
 
+During the `init` of the package, mint and collection objects are created. 
 Copy IDs of the following objects PackageId, AdminCap, Collection, TransferPolicy, TransferPolicyCap, Publisher
-and past them in `setup_script.js`.
+and set them in `setup_script.js`.
 Set the private key as well.
 
 For LOCALNET we need to deploy kiosk:
@@ -98,8 +100,8 @@ set kiosk_pkg 0x...
 # localnet test
 node setup_script.js local
 
-# reduced testnet:
-node setup_script.js test
+# reduced testnet (the --test flag will create a reduced collection):
+node setup_script.js testnet --test
 ```
 
 ### Command Options
