@@ -37,14 +37,21 @@ function parseArguments(): Arguments {
 	}
 
 	if (badgeIds.length === 0 || !env) {
-		console.error("Usage: bun set_future_badge_single.ts --token-id 1 --badge-ids 1,2 --badge-names \"Early,OG\" --env testnet");
+		console.error(
+			'Usage: bun set_future_badge_single.ts --token-id 1 --badge-ids 1,2 --badge-names "Early,OG" --env testnet',
+		);
 		process.exit(1);
 	}
 
 	return { tokenId, badgeIds, badgeNames, env };
 }
 
-async function setFutureBadges(args: Arguments, config: any, client: SuiClient, keypair: Ed25519Keypair) {
+async function setFutureBadges(
+	args: Arguments,
+	config: any,
+	client: SuiClient,
+	keypair: Ed25519Keypair,
+) {
 	const tx = new Transaction();
 	tx.moveCall({
 		target: `${config.PACKAGE_ID}::mint::set_future_badges`,
@@ -70,7 +77,12 @@ async function setFutureBadges(args: Arguments, config: any, client: SuiClient, 
 	}
 }
 
-async function setBadgeNames(args: Arguments, config: any, client: SuiClient, keypair: Ed25519Keypair) {
+async function setBadgeNames(
+	args: Arguments,
+	config: any,
+	client: SuiClient,
+	keypair: Ed25519Keypair,
+) {
 	console.log("Setting badge names:");
 	args.badgeIds.forEach((id, i) => {
 		console.log(`  Badge ID ${id}: "${args.badgeNames![i]}"`);
@@ -123,7 +135,9 @@ async function main() {
 	}
 
 	if (args.tokenId === undefined && (!args.badgeNames || args.badgeNames.length === 0)) {
-		console.error("Must provide either --token-id (for future badges) or --badge-names (for setting names)");
+		console.error(
+			"Must provide either --token-id (for future badges) or --badge-names (for setting names)",
+		);
 		process.exit(1);
 	}
 }
