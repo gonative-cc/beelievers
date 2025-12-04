@@ -37,8 +37,8 @@ const CONFIGS = {
 		DELAY_BETWEEN_BATCHES: 2000,
 		TOTAL_NFTS: 6021, // Full collection (same as production)
 		MINT_START_TIME: 1744088400000, //timestamp ms
-		TEST_ATTRIBUTES_LIMIT: 10, // Only process first 21 NFTs for attributes on testnet
-		TEST_URLS_LIMIT: 10, // Only process first 21 NFTs for URLs on testnet
+		TEST_ATTRIBUTES_LIMIT: 10, // Only process first 10 NFTs for attributes on testnet
+		TEST_URLS_LIMIT: 10, // Only process first 10 NFTs for URLs on testnet
 	},
 	local: {
 		AUCTION_CONTRACT: "0x5f549af160e14603de6102874ff5ec25d8f89c2d137d4a9bfb75977abdab385b",
@@ -735,7 +735,7 @@ async function enableMinting() {
 	}
 }
 
-// Perform actual test mint
+// Test a single mint. It will create a new kiosk object for the signer and attempt to mint one NFT.
 async function testMinting() {
 	const config = getConfig();
 	const { client, signer } = getClientAndSigner();

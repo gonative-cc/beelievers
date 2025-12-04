@@ -1,13 +1,14 @@
 module beelievers_lockdrop::lockdrop_tests;
 
 use beelievers_lockdrop::lockdrop::{Self, Lockdrop, AdminCap};
-use std::type_name;
+use std::type_name::{Self, with_defining_ids};
 use sui::clock::{Self, Clock};
 use sui::coin;
 use sui::sui::SUI;
 use sui::test_scenario::{Self, Scenario};
 
 public struct TestCoin has drop {}
+public struct NBTC has drop {}
 
 // === Test Helpers ===
 
@@ -84,9 +85,8 @@ fun test_deposit_before_start() {
 }
 
 #[test]
-#[allow(unused)]
 fun test_set_time() {
-    let (mut scenario, admin, clock) = setup(1000, 2000);
+    let (scenario, admin, clock) = setup(1000, 2000);
     let mut lockdrop = take_lockdrop(&scenario);
 
     lockdrop.set_time(&admin, 2000, 3000);
@@ -98,10 +98,9 @@ fun test_set_time() {
 }
 
 #[test]
-#[allow(unused)]
 fun test_set_pause() {
-    let (mut scenario, admin, clock) = setup(1000, 2000);
-    let mut lockdrop = take_lockdrop(&mut scenario);
+    let (scenario, admin, clock) = setup(1000, 2000);
+    let mut lockdrop = take_lockdrop(&scenario);
 
     lockdrop.set_pause(&admin, true);
     assert!(lockdrop.is_paused());
@@ -136,12 +135,11 @@ fun test_withdraw_deposit_to_swap() {
 }
 
 #[test]
-#[allow(unused)]
 fun test_deposit_nbtc() {
     let (mut scenario, admin, clock) = setup(1000, 2000);
 
     let nbtc_coin = coin::mint_for_testing<SUI>(2000, scenario.ctx());
-    let mut lockdrop = take_lockdrop(&mut scenario);
+    let mut lockdrop = take_lockdrop(&scenario);
 
     lockdrop.deposit_nbtc<SUI>(&admin, nbtc_coin);
 
@@ -151,67 +149,189 @@ fun test_deposit_nbtc() {
     cleanup(scenario, lockdrop, admin, clock);
 }
 
+fun setup_claim(): (Scenario, AdminCap, Clock, Lockdrop) {
+    let (mut scenario, admin, mut clock) = setup(1000, 2000);
+    let mut lockdrop = take_lockdrop(&scenario);
+    lockdrop.add_accepted_coin<TestCoin>(&admin, &clock);
+    {
+        let (idx, typename) = lockdrop.get_cointype<SUI>();
+        assert!(idx == 0);
+        assert!(typename == with_defining_ids<SUI>());
+
+        let (idx, typename) = lockdrop.get_cointype<TestCoin>();
+        assert!(idx == 1);
+        assert!(typename == with_defining_ids<TestCoin>());
+    };
+
+    // First Deposit
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(1500);
+    {
+        let coin = coin::mint_for_testing<SUI>(1000, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    (scenario, admin, clock, lockdrop)
+}
+
+fun setup_claim_failing(): (Scenario, AdminCap, Clock, Lockdrop) {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim();
+
+    scenario.next_tx(@0x1);
+    clock.set_for_testing(2100);
+
+    let nbtc_coin = coin::mint_for_testing<NBTC>(140, scenario.ctx());
+    lockdrop.deposit_nbtc<NBTC>(&admin, nbtc_coin);
+
+    let rates = vector[2, 60];
+    lockdrop.set_rates(&admin, rates, 100);
+
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(2200);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
+    coin::burn_for_testing(claimed);
+
+    (scenario, admin, clock, lockdrop)
+}
+
 #[test]
-#[allow(unused)]
-fun test_set_rates() {
-    let (mut scenario, admin, clock) = setup(1000, 2000);
-    let mut lockdrop = take_lockdrop(&mut scenario);
+fun test_simple_claim() {
+    let (scenario, admin, clock, lockdrop) = setup_claim_failing();
+    cleanup(scenario, lockdrop, admin, clock);
+}
 
-    let rates = vector[2]; // for SUI
-    lockdrop.set_rates(&admin, rates, 1);
+#[test]
+#[expected_failure(abort_code = sui::dynamic_field::EFieldDoesNotExist)]
+fun test_double_claim() {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim_failing();
 
-    assert!(lockdrop.get_rates() == rates);
-    assert!(lockdrop.get_rates_divisor() == 1);
+    // second claim should fail
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(2300);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
+    coin::burn_for_testing(claimed);
 
     cleanup(scenario, lockdrop, admin, clock);
 }
 
 #[test]
-#[allow(unused)]
-fun test_claim() {
-    let (mut scenario, admin, mut clock) = setup(1000, 2000);
-    clock.set_for_testing(1500);
-    let mut lockdrop = take_lockdrop(&mut scenario);
+#[expected_failure(abort_code = sui::dynamic_field::EFieldDoesNotExist)]
+fun test_claim_no_deposit() {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim_failing();
 
-    // Deposit
-    // TODO: extend scenario to lock other coins as well
-    let coin = coin::mint_for_testing<SUI>(1000, scenario.ctx());
-    lockdrop.deposit(&clock, coin, scenario.ctx());
-
-    scenario.next_tx(@0x2);
-    clock.set_for_testing(1600);
-    let coin = coin::mint_for_testing<SUI>(3000, scenario.ctx());
-    lockdrop.deposit(&clock, coin, scenario.ctx());
-
-    // Deposit nbtc
-    let nbtc_amount: u64 = 2000;
-    let nbtc_coin = coin::mint_for_testing<SUI>(nbtc_amount, scenario.ctx());
-    scenario.next_tx(@0x10);
-    clock.set_for_testing(2100);
-    lockdrop.deposit_nbtc<SUI>(&admin, nbtc_coin);
-
-    // Set rates
-    // 4k sui total, 2k nbtc, so rate is 0.5
-    let rates = vector[5];
-    lockdrop.set_rates(&admin, rates, 10);
-
-    // Claim
-    scenario.next_tx(@0x1);
-    let claimed = lockdrop.claim<SUI>(scenario.ctx());
-    assert!(claimed.value() == nbtc_amount / 4);
+    // second claim should fail
+    scenario.next_tx(@0x200);
+    clock.set_for_testing(2300);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
     coin::burn_for_testing(claimed);
-
-    scenario.next_tx(@0x2);
-    clock.set_for_testing(2200);
-    let claimed = lockdrop.claim<SUI>(scenario.ctx());
-    assert!(claimed.value() == nbtc_amount * 3 / 4);
-    coin::burn_for_testing(claimed);
-
-    // Check deposits removed
-    let deposits = lockdrop.get_user_deposits(@0x1);
-    assert!(deposits.length() == 0);
 
     cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+#[expected_failure(abort_code = lockdrop::EWrongCoin)]
+fun test_claim_wrong_token() {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim_failing();
+
+    // second claim should fail
+    scenario.next_tx(@0x200);
+    clock.set_for_testing(2300);
+    let claimed = lockdrop.claim<SUI>(scenario.ctx());
+    coin::burn_for_testing(claimed);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+#[expected_failure(abort_code = lockdrop::EWrongCoin)]
+fun test_claim_wrong_token2() {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim_failing();
+
+    // second claim should fail
+    scenario.next_tx(@0x200);
+    clock.set_for_testing(2300);
+    let claimed = lockdrop.claim<TestCoin>(scenario.ctx());
+    coin::burn_for_testing(claimed);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+fun test_claim() {
+    let (mut scenario, admin, mut clock, mut lockdrop) = setup_claim();
+
+    scenario.next_tx(@0x3);
+    clock.set_for_testing(1600);
+    {
+        let coin = coin::mint_for_testing<SUI>(1000, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+
+        let coin = coin::mint_for_testing<TestCoin>(100, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    scenario.next_tx(@0x4);
+    clock.set_for_testing(1700);
+    {
+        let coin = coin::mint_for_testing<SUI>(2000, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    // 4k sui total, 100 TestCoin.
+    // Let's say 100 testcoin == 3k SUI, so we have 7k worth of SUI and 1k is 20 nBTC
+    // in total we deposit 20 * 7 = 140 nBTC
+
+    scenario.next_tx(@0x10);
+    clock.set_for_testing(2100);
+    let nbtc_coin = coin::mint_for_testing<NBTC>(140, scenario.ctx());
+    lockdrop.deposit_nbtc<NBTC>(&admin, nbtc_coin);
+
+    check_balance(&lockdrop, @0x1, vector[]);
+    check_balance(&lockdrop, @0x2, vector[1000, 0]);
+    check_balance(&lockdrop, @0x3, vector[1000, 100]);
+    check_balance(&lockdrop, @0x4, vector[2000, 0]);
+
+    // Set rates
+    let rates = vector[2, 60];
+    lockdrop.set_rates(&admin, rates, 100);
+
+    // Claim
+    scenario.next_tx(@0x2);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
+    assert!(claimed.value() == 20);
+    coin::burn_for_testing(claimed);
+    check_deposit_removed(&lockdrop, @0x2);
+
+    scenario.next_tx(@0x3);
+    clock.set_for_testing(2200);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
+    assert!(claimed.value() == 80);
+    coin::burn_for_testing(claimed);
+    check_deposit_removed(&lockdrop, @0x3);
+
+    scenario.next_tx(@0x4);
+    let claimed = lockdrop.claim<NBTC>(scenario.ctx());
+    assert!(claimed.value() == 40);
+    coin::burn_for_testing(claimed);
+    check_deposit_removed(&lockdrop, @0x4);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+fun check_balance(lockdrop: &Lockdrop, user: address, expected: vector<u64>) {
+    let deposits = lockdrop.get_user_deposits(user);
+    assert!(deposits.length() == expected.length());
+    let len = deposits.length();
+    let mut i = 0;
+    while (i < len) {
+        assert!(deposits[i] == expected[i]);
+        i = i +1;
+    };
+}
+
+fun check_deposit_removed(lockdrop: &Lockdrop, user: address) {
+    let deposits = lockdrop.get_user_deposits(user);
+    assert!(deposits.length() == 0);
 }
 
 #[test]

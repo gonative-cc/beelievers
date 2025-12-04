@@ -43,6 +43,7 @@ public struct MintingStarted has copy, drop {
     timestamp: u64,
 }
 
+/// OTW
 public struct MINT has drop {}
 
 public struct AdminCap has key, store {
