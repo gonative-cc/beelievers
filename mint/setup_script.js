@@ -1006,3 +1006,7 @@ Test Environment:
 	}
 }
 
+// Only run main if this file is executed directly, not imported
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main();
+}
