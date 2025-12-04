@@ -2,7 +2,8 @@
 import { SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Transaction } from "@mysten/sui/transactions";
-import { CONFIGS, ADMIN_PRIVATE_KEY, suiprivkeyToHex } from "../mint/setup_script.js";
+import { Command } from "commander";
+import { CONFIGS, ADMIN_PRIVATE_KEY, suiprivkeyToHex } from "../mint/mint.config.js";
 
 interface Arguments {
 	tokenId?: number;
@@ -12,36 +13,27 @@ interface Arguments {
 }
 
 function parseArguments(): Arguments {
-	const args = process.argv.slice(2);
+	const program = new Command();
+	program
+		.option("--token-id <number>", "Token ID to set badges for", (val) => parseInt(val, 10))
+		.requiredOption("--badge-ids <numbers>", "Badge IDs to assign (comma-separated)")
+		.option(
+			"--badge-names <names>",
+			"Badge names (comma-separated, must match badge-ids count)",
+		)
+		.option("--env <environment>", "Environment (testnet, local, production)", "production");
 
-	let tokenId: number | undefined;
-	let badgeIds: number[] = [];
-	let badgeNames: string[] = [];
-	let env: string | undefined;
+	program.parse(process.argv);
+	const opts = program.opts();
 
-	for (let i = 0; i < args.length; i++) {
-		const nextArg = args[i + 1];
-		if (args[i] === "--token-id" && nextArg) {
-			tokenId = parseInt(nextArg, 10);
-			i++;
-		} else if (args[i] === "--badge-ids" && nextArg) {
-			badgeIds = nextArg.split(",").map((id) => parseInt(id.trim(), 10));
-			i++;
-		} else if (args[i] === "--badge-names" && nextArg) {
-			badgeNames = nextArg.split(",").map((name) => name.trim());
-			i++;
-		} else if (args[i] === "--env" && nextArg) {
-			env = nextArg;
-			i++;
-		}
-	}
-
-	if (badgeIds.length === 0 || !env) {
-		console.error(
-			'Usage: bun set_future_badge_single.ts --token-id 1 --badge-ids 1,2 --badge-names "Early,OG" --env testnet',
-		);
-		process.exit(1);
-	}
+	const tokenId: number | undefined = opts.tokenId;
+	const badgeIds: number[] = opts.badgeIds
+		.split(",")
+		.map((id: string) => parseInt(id.trim(), 10));
+	const badgeNames: string[] | undefined = opts.badgeNames
+		? opts.badgeNames.split(",").map((name: string) => name.trim())
+		: undefined;
+	const env: string = opts.env;
 
 	return { tokenId, badgeIds, badgeNames, env };
 }

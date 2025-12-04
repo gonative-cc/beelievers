@@ -2,17 +2,14 @@
 // author: Native team + Dead labs
 
 import fs from "fs/promises";
-import { bech32 } from "bech32";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SuiClient } from "@mysten/sui.js/client";
 import { KioskClient, Network } from "@mysten/kiosk";
-import { fromHex } from "@mysten/sui/utils";
 import { KioskTransaction } from "@mysten/kiosk";
 import { TransferPolicyTransaction } from "@mysten/kiosk";
-// import { Secp256k1Keypair } from "@mysten/sui.js/keypairs/secp256k1";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
+import { CONFIGS, ADMIN_PRIVATE_KEY, suiprivkeyToHex } from "./mint.config.js";
 
-export const ADMIN_PRIVATE_KEY = "";
 const MODULE_NAME = "mint";
 // on localnet kiosk is not published.
 // 1. Download https://github.com/MystenLabs/apps
@@ -21,60 +18,6 @@ const MODULE_NAME = "mint";
 const LOCAL_KIOSK_PKG = "0xc25518ca0079c243b7973f5ebe3e8a390c71ab2f2a2cad1dcd11a6066a98ca15";
 const RANDOM_OBJ = "0x8";
 const CLOCK_OBJ = "0x6";
-// Environment-specific configurations
-export const CONFIGS = {
-	testnet: {
-		AUCTION_CONTRACT: "0x60f6241088efad8dea782dfbf0071aaf58cb1baa60388f4b5e66959f7eec7ef6",
-		PACKAGE_ID: "0xae0aab765399e42c536b26ee8044efbcdfd4346926a88b26847bf5541cde45ed",
-		ADMIN_CAP: "0xb71162810cf2683a763bd7b2400e918e8c5d95a7890450bb8d888e84c0cfd253",
-		TRANSFER_POLICY_CAP: "0x3d35d99f054e3c7ee6fe18c4c8f1fb1900da6d219b8a84b03051cf932d3b56fd",
-		TRANSFER_POLICY_ID: "0x23039cf016e97829afb865ba1db63e342914c11eca76f87cd4b3d3b4e8e63741",
-		COLLECTION_ID: "0x565d980198d3bd1ec33107110ccc5ad448dacb19f1495da313cb015971bcd146",
-		KIOSK: "0x5f3f8963055c7fac44340e82e88e4b79d7abfa36382b006a8e0b9b803cdfb088",
-		KIOSK_CAP: "0x81a267691ff67fd44faf14ba4ab773c22ec306907c8b59af8690b8213e8a6efd",
-		RPC_URL: "https://fullnode.testnet.sui.io:443",
-		BATCH_SIZE: 200, // batch size for setting metadata (attributes + image urls)
-		DELAY_BETWEEN_BATCHES: 2000,
-		TOTAL_NFTS: 6021, // Full collection (same as production)
-		MINT_START_TIME: 1744088400000, //timestamp ms
-		TEST_ATTRIBUTES_LIMIT: 10, // Only process first 10 NFTs for attributes on testnet
-		TEST_URLS_LIMIT: 10, // Only process first 10 NFTs for URLs on testnet
-	},
-	local: {
-		AUCTION_CONTRACT: "0x5f549af160e14603de6102874ff5ec25d8f89c2d137d4a9bfb75977abdab385b",
-		PACKAGE_ID: "0xd0af67c0281e294200260fc18f2760aa9f8ae7e7a6addd472486154dcf12b50a",
-		ADMIN_CAP: "0xb30b32bc7a69871eb46647f16997adfed3407f0252052d745f62e62674a04b6a",
-		TRANSFER_POLICY_CAP: "0x36f9da986f880c01ee2530c475ce005828fc517792c88d5573d950d4fce0bd58",
-		TRANSFER_POLICY_ID: "0x64b8df7d67c5ae69f8c4dfe82401361341a936ed2a2c90be24b5e9f60ae39b8d",
-		COLLECTION_ID: "0x567076a52f4952b1f93fafc1f116c1c82c54c945bef2db84830a1ce79c5d867b",
-		KIOSK: "0xa20173e280e076af4c8a293c6a03569ea2a64bdad571daae9c9d341317171360",
-		KIOSK_CAP: "0xf353f31e1a78d02ea1322cb3e744c4faa52186673ee328bd6cd7ffdd70f0437a",
-		RPC_URL: "http://127.0.0.1:9000", // https://fullnode.testnet.sui.io:443
-		BATCH_SIZE: 200,
-		DELAY_BETWEEN_BATCHES: 2000,
-		TOTAL_NFTS: 6021, // Full collection (same as production)
-		MINT_START_TIME: 1744088400000, //timestamp ms
-		TEST_ATTRIBUTES_LIMIT: 30, // limit amount of attrs processed and sent
-		TEST_URLS_LIMIT: 30, // limit amount of urls processed and sent
-	},
-	production: {
-		AUCTION_CONTRACT: "0x161524be15687cca96dec58146568622458905c30479452351f231cac5d64c41",
-		PACKAGE_ID: "0x3aeca4699ce5f914b56ee04b8ccd4b2eba1b93cabbab9f1a997735c52ef76253",
-		ADMIN_CAP: "0x9e0e0b8c9b68465caaf1e28cfff2c05f7a135503977995670884f57fc8b8ceb6",
-		TRANSFER_POLICY_CAP: "0xe83a713d437607737229a4ae32c056b7893417c14dc399c4696f74a238e4a9a7",
-		TRANSFER_POLICY_ID: "0xd9fe40ec079a6959940260c29be5a782cb79a7951906a0ac380a3961dbd78914",
-		COLLECTION_ID: "0xe896f82d681a0562a3062fff61a72c3ac324be5a4f00fa6db0f9520a4124ce7b",
-		KIOSK: "0x6384ef33995306a29c4e979aee39bec4b04d4094aaa1a6062d995f985dd9b343",
-		KIOSK_CAP: "0x5410c13fd6156a8baa44091ee6682129ffded0dacbcca7944c339aa444208a7f",
-		RPC_URL: "https://fullnode.mainnet.sui.io:443",
-		BATCH_SIZE: 200,
-		DELAY_BETWEEN_BATCHES: 4000,
-		TOTAL_NFTS: 6021, // Full collection
-		MINT_START_TIME: 1757192400000, //timestamp ms
-		TEST_ATTRIBUTES_LIMIT: 30,
-		TEST_URLS_LIMIT: 30,
-	},
-};
 
 // Configuration
 const SKIP_PREMINT = process.argv.includes("--skip-premint");
@@ -102,18 +45,10 @@ function log(message, type = "INFO") {
 	console.log(`[${timestamp}] [${env}] ${emoji} ${message}`);
 }
 
-export function suiprivkeyToHex(suiprivkey) {
-	const decoded = bech32.decode(suiprivkey);
-	const bytes = bech32.fromWords(decoded.words);
-	const privateKeyBytes = bytes.slice(1);
-	return fromHex(Buffer.from(privateKeyBytes).toString("hex"));
-}
-
 // Initialize client and signer
 function getClientAndSigner() {
 	const config = getConfig();
 	const client = new SuiClient({ url: config.RPC_URL });
-	// const signer = Secp256k1Keypair.fromSecretKey(suiprivkeyToHex(ADMIN_PRIVATE_KEY));
 	const signer = Ed25519Keypair.fromSecretKey(suiprivkeyToHex(ADMIN_PRIVATE_KEY));
 	console.log(">>>>>>>>>>> public key", signer.getPublicKey().toSuiAddress());
 	return { client, signer };
@@ -193,7 +128,9 @@ async function addProductionMythicEligible() {
 			const batchMythicEligible = mythicEligible.slice(i, batchEnd);
 
 			log(
-				`Processing mythic eligible batch ${i + 1}-${batchEnd} (${batchMythicEligible.length} addresses)`,
+				`Processing mythic eligible batch ${i + 1}-${batchEnd} (${
+					batchMythicEligible.length
+				} addresses)`,
 				"INFO",
 			);
 
@@ -402,7 +339,9 @@ async function setAttributesFromJson() {
 				: config.TOTAL_NFTS;
 
 		log(
-			`Processing attributes for first ${maxNfts} NFTs (${IS_TEST ? "test limit" : "full collection"})`,
+			`Processing attributes for first ${maxNfts} NFTs (${
+				IS_TEST ? "test limit" : "full collection"
+			})`,
 			"INFO",
 		);
 
@@ -511,7 +450,9 @@ async function setUrlsFromJson() {
 			IS_TEST && config.TEST_URLS_LIMIT ? config.TEST_URLS_LIMIT : config.TOTAL_NFTS;
 
 		log(
-			`Processing URLs for first ${maxNfts} NFTs (${IS_TEST ? "test limit" : "full collection"})`,
+			`Processing URLs for first ${maxNfts} NFTs (${
+				IS_TEST ? "test limit" : "full collection"
+			})`,
 			"INFO",
 		);
 
@@ -1006,7 +947,4 @@ Test Environment:
 	}
 }
 
-// Only run main if this file is executed directly, not imported
-if (import.meta.url === `file://${process.argv[1]}`) {
-	main();
-}
+main();
