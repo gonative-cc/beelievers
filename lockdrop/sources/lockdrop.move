@@ -5,7 +5,6 @@ use sui::balance::Balance;
 use sui::clock::Clock;
 use sui::coin::{Self, Coin};
 use sui::event;
-use sui::sui::SUI;
 use sui::table::{Self, Table};
 
 // === Errors ===
@@ -65,9 +64,8 @@ fun init(ctx: &mut TxContext) {
 // === Admin Functions (Creation) ===
 
 /// callable by Admin to create a new Lockdrop instance.
-public fun new(_: &AdminCap, start: u64, end: u64, ctx: &mut TxContext) {
-    // 1. Setup Accepted Coins Vector
-    let accepted = vector[with_defining_ids<SUI>()];
+public fun new<T>(_: &AdminCap, start: u64, end: u64, ctx: &mut TxContext) {
+    let accepted = vector[with_defining_ids<T>()];
 
     let lockdrop = Lockdrop {
         id: object::new(ctx),

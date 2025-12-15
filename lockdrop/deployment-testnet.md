@@ -6,6 +6,7 @@
 set LockdropPkg 0xfdd5779ce1f081b940c23070c7268edecaf9df2904fbda76f201816c3fef8f4d
 set AdminCap 0x44a7d032ee07dbf93023acba6a38c09c6c8e1f13926d210552abbdaa32be254d
 set MyCoinType 0xfb8ded87111165ea690d825a4d70be6d86d0602c4cd5a9776acc3fe795229d4::tokens::MyCoin
+set USDCType 0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC
 
 UpgradeCap: 0x1fab0ea520bbffbdf9b26a7cababd7602c8d28dcc6a85095a2ba47832f6312cf
 ```
@@ -14,6 +15,7 @@ Created lockdrops:
 
 ```
 set LockdropId 0x11613fb91149e1f36a6c0f013f60c5d9e1150431f7e874c09cbf85b803bc4fc3
+set LockdropId 0x2e1f5ebf89440afc4592765c1cc82b6bd872dc67f9e3ad9f229a3e3528de35a5
 ```
 
 ## Usage
@@ -21,6 +23,7 @@ set LockdropId 0x11613fb91149e1f36a6c0f013f60c5d9e1150431f7e874c09cbf85b803bc4fc
 ```
 sui client call --package $LockdropPkg --module lockdrop \
   --function new \
+  --type-args $USDCType \
   --args $AdminCap START_TIMESTAMP_MS  END_TIMESTAMP_MS \
   --gas-budget 10000000
 ```

@@ -17,7 +17,9 @@ public struct NBTC has drop {}
 fun setup(start: u64, end: u64): (Scenario, AdminCap, Clock) {
     let mut scenario = test_scenario::begin(@0x1);
     let admin_cap = lockdrop::create_admin_cap(scenario.ctx());
-    lockdrop::new(&admin_cap, start, end, scenario.ctx());
+    lockdrop::new<SUI>(&admin_cap, start, end, scenario.ctx());
+    // let accepted = vector[with_defining_ids<SUI>()];
+
     // transfer::public_transfer(admin_cap, scenario.ctx().sender());
     scenario.next_tx(@0x1);
     let clock = clock::create_for_testing(scenario.ctx());
