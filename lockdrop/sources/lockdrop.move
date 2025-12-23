@@ -7,10 +7,14 @@ use sui::coin::{Self, Coin};
 use sui::event;
 use sui::table::{Self, Table};
 
+/// Package version
+const VERSION: u8 = 1;
+
 // === Errors ===
 const EContractPaused: u64 = 1;
 const EInvalidTime: u64 = 2;
 const EWrongCoin: u64 = 3;
+const EVersionMismatch: u64 = 4;
 const EStarted: u64 = 5;
 const ERateNotSet: u64 = 6;
 const EWrongLen: u64 = 7;
@@ -38,6 +42,7 @@ public struct AdminCap has key, store {
 
 public struct Lockdrop has key {
     id: UID,
+    version: u8,
     start_time: u64,
     end_time: u64,
     paused: bool,
@@ -69,6 +74,7 @@ public fun new<T>(_: &AdminCap, start: u64, end: u64, ctx: &mut TxContext) {
 
     let lockdrop = Lockdrop {
         id: object::new(ctx),
+        version: VERSION,
         start_time: start,
         end_time: end,
         paused: false, // Default to active since we are setting times now
@@ -91,6 +97,7 @@ public fun deposit<T>(
     coin_in: Coin<T>,
     ctx: &mut TxContext,
 ) {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
     let now = clock.timestamp_ms();
 
     assert!(!lockdrop.paused, EContractPaused);
@@ -132,6 +139,7 @@ public fun deposit<T>(
 }
 
 public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin<ResultCoin> {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
     let sender = ctx.sender();
     let result_type = with_defining_ids<ResultCoin>();
 
@@ -191,6 +199,7 @@ public fun withdraw_deposit_to_swap<T>(
     clock: &Clock,
     ctx: &mut TxContext,
 ): Coin<T> {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
     let now = clock.timestamp_ms();
     assert!(now > lockdrop.end_time, ELockdropStillActive);
 
@@ -202,6 +211,7 @@ public fun withdraw_deposit_to_swap<T>(
 
 // Can deposit multiple times, but each time must be the same coin
 public fun deposit_nbtc<ResultCoin>(lockdrop: &mut Lockdrop, _: &AdminCap, nBTC: Coin<ResultCoin>) {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
     let type_key = with_defining_ids<ResultCoin>();
 
     if (lockdrop.nbtc_type.is_none()) {
@@ -219,6 +229,7 @@ public fun deposit_nbtc<ResultCoin>(lockdrop: &mut Lockdrop, _: &AdminCap, nBTC:
 }
 
 public fun set_rates(lockdrop: &mut Lockdrop, _: &AdminCap, rates: vector<u64>, divisor: u64) {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
     assert!(rates.length() == lockdrop.accepted.length(), EWrongLen);
     assert!(divisor > 0);
     lockdrop.rates = rates;
