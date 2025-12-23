@@ -140,6 +140,7 @@ public fun deposit<T>(
 
 public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin<ResultCoin> {
     assert!(lockdrop.version == VERSION, EVersionMismatch);
+    assert!(!lockdrop.paused, EContractPaused);
     let sender = ctx.sender();
     let result_type = with_defining_ids<ResultCoin>();
 
