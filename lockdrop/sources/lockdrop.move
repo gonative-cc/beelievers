@@ -11,7 +11,7 @@ use sui::table::{Self, Table};
 const VERSION: u8 = 1;
 
 // === Errors ===
-const EContractPaused: u64 = 1;
+const ENotActive: u64 = 1;
 const EInvalidTime: u64 = 2;
 const EWrongCoin: u64 = 3;
 const EVersionMismatch: u64 = 4;
@@ -19,7 +19,10 @@ const EStarted: u64 = 5;
 const ERateNotSet: u64 = 6;
 const EWrongLen: u64 = 7;
 const ELockdropEnded: u64 = 8;
-const ELockdropStillActive: u64 = 9;
+const ELockdropNotEnded: u64 = 9;
+
+const StatusPaused: u8 = 1;
+const StatusCancelled: u8 = 2;
 
 // === Events ===
 public struct DepositEvent has copy, drop {
@@ -45,7 +48,7 @@ public struct Lockdrop has key {
     version: u8,
     start_time: u64,
     end_time: u64,
-    paused: bool,
+    status: u8,
     nbtc_type: Option<TypeName>,
     /// Set of accepted Coin types.
     accepted: vector<TypeName>,
@@ -77,7 +80,7 @@ public fun new<T>(_: &AdminCap, start: u64, end: u64, ctx: &mut TxContext) {
         version: VERSION,
         start_time: start,
         end_time: end,
-        paused: false, // Default to active since we are setting times now
+        status: 0, // Default to active since we are setting times now
         nbtc_type: option::none(),
         accepted,
         vault: sui::bag::new(ctx),
@@ -100,7 +103,7 @@ public fun deposit<T>(
     assert!(lockdrop.version == VERSION, EVersionMismatch);
     let now = clock.timestamp_ms();
 
-    assert!(!lockdrop.paused, EContractPaused);
+    assert!(lockdrop.status == 0, ENotActive);
     assert!(now >= lockdrop.start_time, EInvalidTime);
     assert!(now <= lockdrop.end_time, ELockdropEnded);
 
@@ -140,7 +143,7 @@ public fun deposit<T>(
 
 public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin<ResultCoin> {
     assert!(lockdrop.version == VERSION, EVersionMismatch);
-    assert!(!lockdrop.paused, EContractPaused);
+    assert!(lockdrop.status == 0, ENotActive);
     let sender = ctx.sender();
     let result_type = with_defining_ids<ResultCoin>();
 
@@ -190,8 +193,8 @@ public fun set_time(lockdrop: &mut Lockdrop, _: &AdminCap, start: u64, end: u64)
     lockdrop.end_time = end;
 }
 
-public fun set_pause(lockdrop: &mut Lockdrop, _: &AdminCap, is_paused: bool) {
-    lockdrop.paused = is_paused;
+public fun set_status(lockdrop: &mut Lockdrop, _: &AdminCap, status: u8) {
+    lockdrop.status = status;
 }
 
 public fun withdraw_deposit_to_swap<T>(
@@ -202,7 +205,7 @@ public fun withdraw_deposit_to_swap<T>(
 ): Coin<T> {
     assert!(lockdrop.version == VERSION, EVersionMismatch);
     let now = clock.timestamp_ms();
-    assert!(now > lockdrop.end_time, ELockdropStillActive);
+    assert!(now > lockdrop.end_time, ELockdropNotEnded);
 
     let type_key = with_defining_ids<T>();
     let balance: &mut Balance<T> = lockdrop.vault.borrow_mut(type_key);
@@ -264,7 +267,7 @@ public fun get_start_time(lockdrop: &Lockdrop): u64 { lockdrop.start_time }
 public fun get_end_time(lockdrop: &Lockdrop): u64 { lockdrop.end_time }
 
 #[test_only]
-public fun is_paused(lockdrop: &Lockdrop): bool { lockdrop.paused }
+public fun is_paused(lockdrop: &Lockdrop): bool { lockdrop.status == StatusPaused }
 
 #[test_only]
 public fun get_accepted(lockdrop: &Lockdrop): vector<TypeName> { lockdrop.accepted }

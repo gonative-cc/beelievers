@@ -103,11 +103,12 @@ fun test_set_time() {
 fun test_set_pause() {
     let (scenario, admin, clock) = setup(1000, 2000);
     let mut lockdrop = take_lockdrop(&scenario);
+    assert!(!lockdrop.is_paused());
 
-    lockdrop.set_pause(&admin, true);
+    lockdrop.set_status(&admin, 1);
     assert!(lockdrop.is_paused());
 
-    lockdrop.set_pause(&admin, false);
+    lockdrop.set_status(&admin, 2);
     assert!(!lockdrop.is_paused());
 
     cleanup(scenario, lockdrop, admin, clock);
