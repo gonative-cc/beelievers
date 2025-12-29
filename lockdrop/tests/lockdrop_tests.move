@@ -348,3 +348,143 @@ fun test_get_user_deposits_empty() {
 
     cleanup(scenario, lockdrop, admin, clock);
 }
+
+fun setup_cancel(cancelled: bool): (Scenario, AdminCap, Clock, Lockdrop) {
+    let (mut scenario, admin, mut clock) = setup(1000, 2000);
+    let mut lockdrop = take_lockdrop(&scenario);
+
+    // User deposits coins (using @0x1)
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(1500);
+    let coin1 = coin::mint_for_testing<SUI>(500, scenario.ctx());
+    lockdrop.deposit(&clock, coin1, scenario.ctx());
+
+    if (cancelled) {
+        // Admin cancels lockdrop
+        scenario.next_tx(@0x1);
+        lockdrop.set_status(&admin, 2);
+        scenario.next_tx(@0x2);
+    };
+    (scenario, admin, clock, lockdrop)
+}
+
+#[test]
+#[expected_failure(abort_code = lockdrop::ENotActive)]
+fun test_claim_cancelled_not_cancelled() {
+    let (mut scenario, admin, clock, mut lockdrop) = setup_cancel(false);
+
+    let claimed = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    coin::burn_for_testing(claimed);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+#[expected_failure(abort_code = lockdrop::ENoDeposit)]
+fun test_claim_cancelled_double_claim() {
+    let (mut scenario, admin, clock, mut lockdrop) = setup_cancel(true);
+
+    // First claim succeeds
+    let claimed = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    assert!(claimed.value() == 500);
+    coin::burn_for_testing(claimed);
+
+    // Second claim should fail
+    let claimed = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    coin::burn_for_testing(claimed);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+fun test_claim_cancelled_multiple_users() {
+    let (mut scenario, admin, mut clock) = setup(1000, 2000);
+    let mut lockdrop = take_lockdrop(&scenario);
+
+    // User 1 deposits
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(1500);
+    {
+        let coin = coin::mint_for_testing<SUI>(300, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    // User 2 deposits
+    scenario.next_tx(@0x3);
+    {
+        let coin = coin::mint_for_testing<SUI>(700, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    // Admin cancels lockdrop
+    scenario.next_tx(@0x1);
+    lockdrop.set_status(&admin, 2);
+
+    // User 1 claims
+    scenario.next_tx(@0x2);
+    let claimed = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    assert!(claimed.value() == 300);
+    coin::burn_for_testing(claimed);
+
+    // User 2 claims
+    scenario.next_tx(@0x3);
+    let claimed = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    assert!(claimed.value() == 700);
+    coin::burn_for_testing(claimed);
+
+    // Verify all deposits are zeroed
+    let deposits1 = lockdrop.get_user_deposits(@0x2);
+    assert!(deposits1[0] == 0);
+
+    let deposits2 = lockdrop.get_user_deposits(@0x3);
+    assert!(deposits2[0] == 0);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
+
+#[test]
+fun test_claim_cancelled_multiple_coin_types() {
+    let (mut scenario, admin, mut clock) = setup(1000, 2000);
+    let mut lockdrop = take_lockdrop(&scenario);
+    lockdrop.add_accepted_coin<TestCoin>(&admin, &clock);
+
+    // User deposits SUI 2 times
+    scenario.next_tx(@0x2);
+    clock.set_for_testing(1500);
+    {
+        let coin = coin::mint_for_testing<SUI>(300, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+        clock.set_for_testing(1600);
+        let coin2 = coin::mint_for_testing<SUI>(200, scenario.ctx());
+        lockdrop.deposit(&clock, coin2, scenario.ctx());
+    };
+
+    // User deposits TestCoin
+    scenario.next_tx(@0x2);
+    {
+        let coin = coin::mint_for_testing<TestCoin>(100, scenario.ctx());
+        lockdrop.deposit(&clock, coin, scenario.ctx());
+    };
+
+    // Admin cancels lockdrop
+    scenario.next_tx(@0x1);
+    lockdrop.set_status(&admin, 2);
+
+    // User claims SUI
+    scenario.next_tx(@0x2);
+    let claimed_sui = lockdrop.claim_cancelled<SUI>(scenario.ctx());
+    assert!(claimed_sui.value() == 500);
+    coin::burn_for_testing(claimed_sui);
+
+    // User claims TestCoin
+    let claimed_test = lockdrop.claim_cancelled<TestCoin>(scenario.ctx());
+    assert!(claimed_test.value() == 100);
+    coin::burn_for_testing(claimed_test);
+
+    // Verify all deposits are zeroed
+    let deposits = lockdrop.get_user_deposits(@0x2);
+    assert!(deposits[0] == 0);
+    assert!(deposits[1] == 0);
+
+    cleanup(scenario, lockdrop, admin, clock);
+}
