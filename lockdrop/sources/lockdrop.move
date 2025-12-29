@@ -20,6 +20,7 @@ const ERateNotSet: u64 = 6;
 const EWrongLen: u64 = 7;
 const ELockdropEnded: u64 = 8;
 const ELockdropNotEnded: u64 = 9;
+const ENoDeposit: u64 = 10;
 
 const StatusPaused: u8 = 1;
 const StatusCancelled: u8 = 2;
@@ -167,6 +168,26 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
 
     let vault_balance: &mut Balance<ResultCoin> = lockdrop.vault.borrow_mut(result_type);
     coin::from_balance(vault_balance.split(total_claim), ctx)
+}
+
+/// In case the lockdrop is cancelled, allows user withdraw his deposit.
+/// Fails if the user didn't deposit the given coin or already withdrawn it.
+public fun claim_cancelled<ResultCoin>(
+    lockdrop: &mut Lockdrop,
+    ctx: &mut TxContext,
+): Coin<ResultCoin> {
+    assert!(lockdrop.version == VERSION, EVersionMismatch);
+    assert!(lockdrop.status == StatusCancelled, ENotActive);
+
+    let sender = ctx.sender();
+    let (idx, coin_type) = lockdrop.get_cointype<ResultCoin>();
+
+    let amount = &mut lockdrop.deposits[sender][idx];
+    assert!(*amount > 0, ENoDeposit);
+    let balance: &mut Balance<ResultCoin> = lockdrop.vault.borrow_mut(coin_type);
+    let c = coin::take(balance, *amount, ctx);
+    *amount = 0;
+    c
 }
 
 public fun get_user_deposits(lockdrop: &Lockdrop, user: address): vector<u64> {
