@@ -4,8 +4,9 @@
 
 ```
 set LockdropPkg 0xd244750dc02f917b2d539c5b68e14afbfc4e58920f04a0587692f8c6920e94ea
-set AdminCap 0x366413a8ef36d78ac3b3080567482d3fb636b54f1af76c34b02073c4043dcf8d 
+set AdminCap 0x366413a8ef36d78ac3b3080567482d3fb636b54f1af76c34b02073c4043dcf8d
 set USDCType 0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC
+set $SUIType "0x2::sui::SUI"
 
 UpgradeCap: 0x6bb2bff1f08d99eb13bce3030442a3a74b2b2064844009542978995fd3f61e43
 ```
@@ -13,7 +14,7 @@ UpgradeCap: 0x6bb2bff1f08d99eb13bce3030442a3a74b2b2064844009542978995fd3f61e43
 Created lockdrops:
 
 ```
-set LockdropId 0xb4b2841c611936bebb2aa0a8ba77dbbdf65ca8752e4326de6b948c384a0b4335
+set LockdropId 0x0cf8b917473b21a215f99cddb7ace5619ac428885fc02247f29f766f26306bd3
 ```
 
 ## v0.1
@@ -61,11 +62,11 @@ sui client call --package $LockdropPkg --module lockdrop --function add_accepted
   --gas-budget 5000000
 ```
 
-Deposit SUI
+Deposit
 
 ```
 sui client call --package $LockdropPkg --module lockdrop --function deposit \
-  --type-args "0x2::sui::SUI" \
+  --type-args $USDCType \
   --args $LockdropId 0x6 COIN_OBJECT_ID_TO_DEPOSIT \
   --gas-budget 5000000
 ```
