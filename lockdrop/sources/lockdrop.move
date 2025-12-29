@@ -170,6 +170,12 @@ public fun claim<ResultCoin>(lockdrop: &mut Lockdrop, ctx: &mut TxContext): Coin
     coin::from_balance(vault_balance.split(total_claim), ctx)
 }
 
+#[allow(lint(self_transfer))]
+public fun claim_and_transfer<ResultCoin>(l: &mut Lockdrop, ctx: &mut TxContext) {
+    let result = claim<ResultCoin>(l, ctx);
+    transfer::public_transfer(result, ctx.sender());
+}
+
 /// In case the lockdrop is cancelled, allows user withdraw his deposit.
 /// Fails if the user didn't deposit the given coin or already withdrawn it.
 public fun claim_cancelled<ResultCoin>(
