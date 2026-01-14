@@ -1,6 +1,22 @@
 # Beelivers
 
-Beelivers BTCFi activation and NFT auction
+_BTCFi Beelievers_ is a movement to build the ultimate Bitcoin yield and app ecosystem. No trade-offs on trust or sovereignty.
+
+Observations:
+- Communities are formed around "user" markets.
+- BTCFi needs a powerful, trustless execution environment that can attract builders, users and investors. Bitcoin (and Bitcoin side chains) don’t have that.
+
+Thesis: 
+- BTCFi and Bitcoin community will work, earn, and flow - on a powerful L1 that will provide BTC in the Web3-native → Sui!
+- See our [article](https://x.com/goNativeCC/status/1894419956475072770)
+
+### About this project
+
+The Beelievers NFT is the embodiment of the Beelivers movement. 
+
+We created teh first ever trust minimized Vickrey auction to sell the NFTs!
+
+- [Minting Flow](https://github.com/gonative-cc/beelievers/tree/master/mint)
 
 ## Deployed objects & packages
 
