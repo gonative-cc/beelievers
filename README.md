@@ -8,7 +8,8 @@ Observations:
 
 Thesis: 
 - BTCFi and Bitcoin community will work, earn, and flow - on a powerful L1 that will provide BTC in the Web3-native → Sui!
-- See our [article](https://x.com/goNativeCC/status/1894419956475072770)
+
+See our [website](https://www.gonative.cc/beelievers) and the activation [article](https://x.com/goNativeCC/status/1894419956475072770).
 
 ### About this project
 
