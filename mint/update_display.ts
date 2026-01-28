@@ -1,6 +1,5 @@
 import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
-import { readFileSync } from 'fs';
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // PLACEHOLDER: Update these values
