@@ -34,7 +34,7 @@ export async function editDisplay(displayId: string, field: string, newValue: st
 	// Call display::update_version
 	txb.moveCall({
 		target: '0x2::display::update_version',
-		typeArguments: [`${NFT_TYPE}::nft::Nft`],
+		typeArguments: [NFT_TYPE],
 		arguments: [txb.object(displayId)],
 	});
 
