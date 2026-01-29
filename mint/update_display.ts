@@ -1,21 +1,22 @@
-import { Transaction } from '@mysten/sui/transactions';
-import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
+import { Transaction } from "@mysten/sui/transactions";
+import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // PLACEHOLDER: Update these values
-const NFT_TYPE = '0x3aeca4699ce5f914b56ee04b8ccd4b2eba1b93cabbab9f1a997735c52ef76253::mint::BeelieverNFT';
-const DISPLAY_ID = '0x1282058e65d80c3937f00e5da5bb3df1cbf0228294e9c9b43babf118f07d3487';
-const FIELD_NAME = 'image_url';
-const NEW_VALUE = '';
+const NFT_TYPE =
+	"0x3aeca4699ce5f914b56ee04b8ccd4b2eba1b93cabbab9f1a997735c52ef76253::mint::BeelieverNFT";
+const DISPLAY_ID = "0x1282058e65d80c3937f00e5da5bb3df1cbf0228294e9c9b43babf118f07d3487";
+const FIELD_NAME = "image_url";
+const NEW_VALUE = "";
 
-import 'dotenv/config';
+import "dotenv/config";
 // Load keypair from mnemonic
 function getKeypair(): Ed25519Keypair {
 	const mnemonic = process.env.MNEMONIC;
 
 	if (!mnemonic) {
 		throw new Error(
-			'Missing MNEMONIC environment variable. Please set MNEMONIC (e.g. in a .env file or your shell environment) before running this command.',
+			"Missing MNEMONIC environment variable. Please set MNEMONIC (e.g. in a .env file or your shell environment) before running this command.",
 		);
 	}
 
@@ -24,24 +25,24 @@ function getKeypair(): Ed25519Keypair {
 
 // Edit display fields
 export async function editDisplay(displayId: string, field: string, newValue: string) {
-	const client = new SuiClient({ url: getFullnodeUrl('mainnet') });
+	const client = new SuiClient({ url: getFullnodeUrl("mainnet") });
 	const keypair = getKeypair();
-	console.log('🔑 Using signer address:', keypair.toSuiAddress());
+	console.log("🔑 Using signer address:", keypair.toSuiAddress());
 	const txb = new Transaction();
 
-	if (newValue === '') {
+	if (newValue === "") {
 		throw new Error(`You should set a new value for the "${field}" field`);
 	}
 	// Call display::edit with type parameters
 	txb.moveCall({
-		target: '0x2::display::edit',
+		target: "0x2::display::edit",
 		typeArguments: [NFT_TYPE],
 		arguments: [txb.object(displayId), txb.pure.string(field), txb.pure.string(newValue)],
 	});
 
 	// Call display::update_version
 	txb.moveCall({
-		target: '0x2::display::update_version',
+		target: "0x2::display::update_version",
 		typeArguments: [NFT_TYPE],
 		arguments: [txb.object(displayId)],
 	});
@@ -52,9 +53,9 @@ export async function editDisplay(displayId: string, field: string, newValue: st
 		options: { showEffects: true },
 	});
 
-	console.log('✅ Display edited successfully!');
-	console.log('Transaction digest:', result.digest);
-	console.log('Status:', result.effects?.status?.status);
+	console.log("✅ Display edited successfully!");
+	console.log("Transaction digest:", result.digest);
+	console.log("Status:", result.effects?.status?.status);
 
 	return result;
 }
@@ -64,7 +65,7 @@ if (import.meta.main) {
 	editDisplay(DISPLAY_ID, FIELD_NAME, NEW_VALUE)
 		.then(() => process.exit(0))
 		.catch((error) => {
-			console.log(error)
+			console.log(error);
 			process.exit(1);
 		});
 }
