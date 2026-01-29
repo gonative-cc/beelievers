@@ -11,7 +11,15 @@ const NEW_VALUE = '';
 import 'dotenv/config';
 // Load keypair from mnemonic
 function getKeypair(): Ed25519Keypair {
-	return Ed25519Keypair.deriveKeypair(process.env.MNEMONIC!);
+	const mnemonic = process.env.MNEMONIC;
+
+	if (!mnemonic) {
+		throw new Error(
+			'Missing MNEMONIC environment variable. Please set MNEMONIC (e.g. in a .env file or your shell environment) before running this command.',
+		);
+	}
+
+	return Ed25519Keypair.deriveKeypair(mnemonic);
 }
 
 // Edit display fields
