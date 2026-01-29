@@ -30,7 +30,7 @@ export async function editDisplay(displayId: string, field: string, newValue: st
 	const txb = new Transaction();
 
 	if (newValue === '') {
-		throw new Error("You should set the new image_url value");
+		throw new Error(`You should set a new value for the "${field}" field`);
 	}
 	// Call display::edit with type parameters
 	txb.moveCall({
