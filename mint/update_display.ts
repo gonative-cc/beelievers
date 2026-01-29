@@ -26,7 +26,7 @@ function getKeypair(): Ed25519Keypair {
 export async function editDisplay(displayId: string, field: string, newValue: string) {
 	const client = new SuiClient({ url: getFullnodeUrl('mainnet') });
 	const keypair = getKeypair();
-	console.log(keypair.toSuiAddress())
+	console.log('🔑 Using signer address:', keypair.toSuiAddress());
 	const txb = new Transaction();
 
 	if (newValue === '') {
