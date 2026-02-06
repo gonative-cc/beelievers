@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       # @v2
-      - uses: oven-sh/setup-bun@bc6f04ce3baa207596266ba91e76b900bfe70da2
+      - uses: oven-sh/setup-bun@ab8cb4e8f89912a29b87e4abc4554f2301648a5c
       - run: bun install prettier
 
       - name: Prettify code
