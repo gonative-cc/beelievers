@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v6
 
       # @v2
-      - uses: oven-sh/setup-bun@bc6f04ce3baa207596266ba91e76b900bfe70da2
+      - uses: oven-sh/setup-bun@0ff83bfc51e05dd2251088164ec6a5e8533b476b
       - run: bun install @mysten/prettier-plugin-move
 
       - run: bun prettier-move --config .prettier-move.json -c **/*.move
